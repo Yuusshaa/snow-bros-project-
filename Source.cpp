@@ -6,6 +6,8 @@
 #include "Botom.h"
 #include "Flyingshit.h"
 #include "Tornado.h"
+#include"LoginScreen.h"
+#include"Login.h"
 #include <cstdlib>
 #include <ctime>
 #include <string>
@@ -115,7 +117,13 @@ int main() {
 
     sf::Font font;
 
-    font.loadFromFile("arial.ttf");
+    font.loadFromFile("Silkscreen-Regular.ttf");
+
+    Login auth("users.txt");
+    LoginScreen loginScreen(window, auth);
+    loginScreen.showSplash();
+    bool loggedIn = loginScreen.run();
+    if (!loggedIn) return 0;
 
 
     Character* characters[10] = { nullptr };
