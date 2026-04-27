@@ -13,6 +13,10 @@ public:
     virtual void reset() = 0;
     virtual sf::FloatRect getRect() = 0;
     virtual void hit() = 0;
+    void setPosition(float x, float y) {
+        rect.left = x;
+        rect.top = y;
+    }
 protected:
     sf::FloatRect rect;
 };

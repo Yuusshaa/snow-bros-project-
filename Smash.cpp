@@ -1,4 +1,5 @@
 #include "Smash.h"
+#include "Mogera.h"
 #include <iostream>
 
 Smash::Smash() {
@@ -68,31 +69,38 @@ void Smash::checkEnemyCollision(Enemy** enemies, int enemyCount) {
 }
 
 void Smash::checkSnowballEnemyCollision(Enemy** enemies, int enemyCount) {
-    for (int snowballIndex = 0; snowballIndex < snowballCount; snowballIndex++) {
-        if (!snowballs[snowballIndex]->isActive()) 
-            continue;
+    for (int s = 0; s < snowballCount; s++) {
+        if (!snowballs[s]->isActive()) continue;
 
-        for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
-            if (enemies[enemyIndex]->isDead()) 
+        for (int e = 0; e < enemyCount; e++) {
+            if (enemies[e]->isDead()) continue;
+
+            sf::FloatRect sRect = snowballs[s]->getRect();
+            sf::FloatRect eRect = enemies[e]->getRect();
+
+            bool overlapX = sRect.left < eRect.left + eRect.width &&
+                sRect.left + sRect.width > eRect.left;
+            bool overlapY = sRect.top < eRect.top + eRect.height &&
+                sRect.top + sRect.height > eRect.top;
+
+            if (!overlapX || !overlapY) continue;
+
+            // Mogera takes health damage instead of snow
+            Mogera* mogera = dynamic_cast<Mogera*>(enemies[e]);
+            if (mogera) {
+                mogera->hitWithSnow();
+                snowballs[s]->deactivate();
                 continue;
-            if (enemies[enemyIndex]->isRolling()) 
-                continue;
-
-            sf::FloatRect snowballRect = snowballs[snowballIndex]->getRect();
-            sf::FloatRect enemyRect = enemies[enemyIndex]->getRect();
-
-            bool overlapX = (snowballRect.left < enemyRect.left + enemyRect.width) && 
-                            (snowballRect.left + snowballRect.width > enemyRect.left);
-            bool overlapY = (snowballRect.top < enemyRect.top + enemyRect.height) && 
-                            (snowballRect.top + snowballRect.height > enemyRect.top);
-
-            if (overlapX && overlapY) {
-                enemies[enemyIndex]->hitWithSnow();
-                if (enemies[enemyIndex]->isEncased()) {
-                    score += 100;
-                }
-                snowballs[snowballIndex]->deactivate();
             }
+
+            // Normal enemies
+            if (enemies[e]->isRolling()) continue;
+
+            enemies[e]->hitWithSnow();
+            if (enemies[e]->isEncased()) {
+                score += 100;
+            }
+            snowballs[s]->deactivate();
         }
     }
 }

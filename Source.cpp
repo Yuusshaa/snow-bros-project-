@@ -6,27 +6,24 @@
 #include "Botom.h"
 #include "Flyingshit.h"
 #include "Tornado.h"
-#include"LoginScreen.h"
-#include"Login.h"
+#include "LoginScreen.h"
+#include "Login.h"
+#include "Mogera.h"
 #include <cstdlib>
 #include <ctime>
 #include <string>
 
-
-
 void spawnPlatforms(Platform** platforms, int& platformCount, int level) {
-    // clear old platforms
-    for (int platformIndex = 0; platformIndex < platformCount; platformIndex++) {
-        delete platforms[platformIndex];
-        platforms[platformIndex] = nullptr;
+    for (int i = 0; i < platformCount; i++) {
+        delete platforms[i];
+        platforms[i] = nullptr;
     }
     platformCount = 0;
 
-  
     platforms[platformCount++] = new Platform(0, 560, 800, 20);
 
     if (level == 1) {
-       platforms[platformCount++] = new Platform(20, 430, 280, 15);
+        platforms[platformCount++] = new Platform(20, 430, 280, 15);
         platforms[platformCount++] = new Platform(500, 430, 280, 15);
         platforms[platformCount++] = new Platform(200, 300, 400, 15);
         platforms[platformCount++] = new Platform(200, 170, 400, 15);
@@ -45,53 +42,41 @@ void spawnPlatforms(Platform** platforms, int& platformCount, int level) {
         platforms[platformCount++] = new Platform(100, 210, 180, 15);
         platforms[platformCount++] = new Platform(520, 210, 180, 15);
         platforms[platformCount++] = new Platform(300, 120, 200, 15);
-
     }
     else if (level == 4) {
-        // Top
-        platforms[platformCount++] = new Platform(50, 150, 300, 15); // top left
-        platforms[platformCount++] = new Platform(450, 150, 300, 15); // top right
-
-        // Sides (tall thin platforms acting as walls)
-
-
-        // Bottom of the rectangle
-        platforms[platformCount++] = new Platform(50, 420, 300, 15); // bottom left
-        platforms[platformCount++] = new Platform(450, 420, 300, 15); // bottom right
-
-        // Inner platforms (the two small ones in your sketch)
-        platforms[platformCount++] = new Platform(150, 300, 200, 15); // inner mid left
-        platforms[platformCount++] = new Platform(450, 300, 200, 15); // inner mid right
-
- /*       platforms[platformCount++] = new Platform(50, 150, 300, 15); // top left long
-        platforms[platformCount++] = new Platform(450, 150, 300, 15); // top right long
-        platforms[platformCount++] = new Platform(150, 300, 200, 15); // mid left
-        platforms[platformCount++] = new Platform(150, 420, 200, 15); // lower left
-        platforms[platformCount++] = new Platform(500, 420, 200, 15); // lower right
-        platforms[platformCount++] = new Platform(500, 300, 200, 15); // mid right*/
+        platforms[platformCount++] = new Platform(50, 150, 300, 15);
+        platforms[platformCount++] = new Platform(450, 150, 300, 15);
+        platforms[platformCount++] = new Platform(50, 420, 300, 15);
+        platforms[platformCount++] = new Platform(450, 420, 300, 15);
+        platforms[platformCount++] = new Platform(150, 300, 200, 15);
+        platforms[platformCount++] = new Platform(450, 300, 200, 15);
     }
-
+    else if (level == 5) {
+        platforms[platformCount++] = new Platform(0, 380, 280, 15);
+        platforms[platformCount++] = new Platform(500, 100, 300, 15);
+        platforms[platformCount++] = new Platform(400, 200, 300, 15);
+        platforms[platformCount++] = new Platform(500, 300, 300, 15);
+        platforms[platformCount++] = new Platform(400, 400, 300, 15);
+        platforms[platformCount++] = new Platform(500, 500, 300, 15);
+    }
 }
 
 void spawnEnemies(Enemy** enemies, int& enemyCount, int level) {
-
-    for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
-        delete enemies[enemyIndex];
-        enemies[enemyIndex] = nullptr;
+    for (int i = 0; i < enemyCount; i++) {
+        delete enemies[i];
+        enemies[i] = nullptr;
     }
     enemyCount = 0;
 
     if (level == 1) {
         enemies[enemyCount++] = new Botom(300, 100);
         enemies[enemyCount++] = new Botom(500, 100);
-
     }
     else if (level == 2) {
         enemies[enemyCount++] = new Botom(200, 100);
         enemies[enemyCount++] = new Botom(400, 100);
         enemies[enemyCount++] = new FlyingFoogaFoog(600, 100);
         enemies[enemyCount++] = new FlyingFoogaFoog(600, 100);
-
     }
     else if (level == 3) {
         enemies[enemyCount++] = new Botom(200, 100);
@@ -103,9 +88,10 @@ void spawnEnemies(Enemy** enemies, int& enemyCount, int level) {
     else if (level == 4) {
         enemies[enemyCount++] = new Botom(200, 100);
         enemies[enemyCount++] = new Tornado(499, 120);
-
     }
-
+    else if (level == 5) {
+        enemies[enemyCount++] = new Mogera(20, 320);
+    }
 }
 
 int main() {
@@ -116,7 +102,6 @@ int main() {
     window.setFramerateLimit(60);
 
     sf::Font font;
-
     font.loadFromFile("Silkscreen-Regular.ttf");
 
     Login auth("users.txt");
@@ -125,22 +110,20 @@ int main() {
     bool loggedIn = loginScreen.run();
     if (!loggedIn) return 0;
 
-
     Character* characters[10] = { nullptr };
     int characterCount = 0;
     characters[characterCount++] = new Smash();
 
-    int currentLevel = 1;
+    int currentLevel = 5;
 
     Platform* platforms[15] = { nullptr };
     int platformCount = 0;
-    spawnPlatforms(platforms, platformCount, currentLevel);  
+    spawnPlatforms(platforms, platformCount, currentLevel);
 
     Enemy* enemies[20] = { nullptr };
     int enemyCount = 0;
 
-    
-    int maxLevels = 4;
+    int maxLevels = 5;
     bool levelComplete = false;
     float levelCompleteTimer = 1.0f;
 
@@ -151,14 +134,13 @@ int main() {
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) 
+            if (event.type == sf::Event::Closed)
                 window.close();
-            if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::H)) {
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::H)
                 showHitboxes = !showHitboxes;
-            }
         }
 
-        // Game over screen
+        // ---- GAME OVER ----
         if (characters[0]->isGameOver()) {
             window.clear(sf::Color::Black);
             sf::Text gameOverText;
@@ -171,30 +153,27 @@ int main() {
             window.display();
             continue;
         }
-        // Level complete screen
+
+        // ---- LEVEL COMPLETE ----
         if (levelComplete) {
             levelCompleteTimer--;
-
             window.clear(sf::Color::Black);
             sf::Text lvlText;
             lvlText.setFont(font);
-            lvlText.setString(std::string("LEVEL ") + std::to_string(currentLevel) + " COMPLETE!\n" + "Score: " + std::to_string(characters[0]->getScore()));
+            lvlText.setString("LEVEL " + std::to_string(currentLevel) + " COMPLETE!\nScore: " + std::to_string(characters[0]->getScore()));
             lvlText.setCharacterSize(50);
             lvlText.setFillColor(sf::Color::Green);
             lvlText.setPosition(150, 250);
             window.draw(lvlText);
             window.display();
 
-            // 2sec timer
             if (levelCompleteTimer <= 0) {
                 currentLevel++;
-
                 if (currentLevel > maxLevels) {
-                    //endcresds
                     window.clear(sf::Color::Black);
                     sf::Text winText;
                     winText.setFont(font);
-                    winText.setString(std::string("YOU WIN!\n") + "Final Score : " + std::to_string(characters[0]->getScore()));
+                    winText.setString("YOU WIN!\nFinal Score: " + std::to_string(characters[0]->getScore()));
                     winText.setCharacterSize(60);
                     winText.setFillColor(sf::Color::Yellow);
                     winText.setPosition(200, 250);
@@ -213,7 +192,7 @@ int main() {
             continue;
         }
 
-        // Checker for if all enemies died
+        // ---- ALL ENEMIES DEAD CHECK ----
         bool allDead = true;
         for (int i = 0; i < enemyCount; i++) {
             if (!enemies[i]->isDead()) {
@@ -221,57 +200,87 @@ int main() {
                 break;
             }
         }
-
         if (allDead && enemyCount > 0) {
             levelComplete = true;
-            levelCompleteTimer = 120.f; // 2sec before new screen loads
+            levelCompleteTimer = 120.f;
         }
 
-        // Normal update
-        for (int characterIndex = 0; characterIndex < characterCount; characterIndex++) {
-            characters[characterIndex]->Update(platforms, platformCount, enemies, enemyCount);
+        // ---- UPDATE PLAYER ----
+        for (int i = 0; i < characterCount; i++) {
+            characters[i]->Update(platforms, platformCount, enemies, enemyCount);
         }
-        for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
-            enemies[enemyIndex]->Update(platforms, platformCount);
-        }
+
+        // ---- UPDATE ENEMIES ----
         sf::FloatRect playerRect = characters[0]->getRect();
+        float playerCX = playerRect.left + playerRect.width / 2;
+        float playerCY = playerRect.top + playerRect.height / 2;
 
-        for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
-            Tornado* tornadoEnemy = dynamic_cast<Tornado*>(enemies[enemyIndex]);
-            if (!tornadoEnemy) 
-                continue;
+        for (int i = 0; i < enemyCount; i++) {
 
-            tornadoEnemy->Update(platforms, platformCount,
-                playerRect.left + playerRect.width / 2,
-                playerRect.top + playerRect.height / 2);
+            // --- MOGERA ---
+            Mogera* mogera = dynamic_cast<Mogera*>(enemies[i]);
+            if (mogera) {
+                mogera->Update(platforms, platformCount, playerCX, playerCY);
 
-            // Check knife hits player
-            if (tornadoEnemy->knifeActive) {
-                sf::FloatRect knifeRect = tornadoEnemy->getKnifeRect();
-                bool overlapX = (knifeRect.left < playerRect.left + playerRect.width) && 
-                                (knifeRect.left + knifeRect.width > playerRect.left);
-                bool overlapY = (knifeRect.top < playerRect.top + playerRect.height) && 
-                                (knifeRect.top + knifeRect.height > playerRect.top);
-                if (overlapX && overlapY) {
-                    tornadoEnemy->knifeActive = false;
-                    characters[0]->hit();
+                // Knife hits player
+                if (mogera->knifeActive) {
+                    sf::FloatRect k = mogera->getKnifeRect();
+                    bool ox = k.left < playerRect.left + playerRect.width && k.left + k.width > playerRect.left;
+                    bool oy = k.top < playerRect.top + playerRect.height && k.top + k.height > playerRect.top;
+                    if (ox && oy) {
+                        mogera->deactivateKnife();
+                        characters[0]->hit();
+                    }
                 }
+
+                // Children hit player
+                for (int c = 0; c < mogera->childCount; c++) {
+                    if (mogera->children[c]->isDead()) continue;
+                    sf::FloatRect cRect = mogera->children[c]->getRect();
+                    bool ox = cRect.left < playerRect.left + playerRect.width && cRect.left + cRect.width > playerRect.left;
+                    bool oy = cRect.top < playerRect.top + playerRect.height && cRect.top + cRect.height > playerRect.top;
+                    if (ox && oy) {
+                        characters[0]->hit();
+                        mogera->children[c]->kill();
+                    }
+                }
+                continue;
             }
+
+            // --- TORNADO ---
+            Tornado* tornado = dynamic_cast<Tornado*>(enemies[i]);
+            if (tornado) {
+                tornado->Update(platforms, platformCount, playerCX, playerCY);
+
+                if (tornado->knifeActive) {
+                    sf::FloatRect k = tornado->getKnifeRect();
+                    bool ox = k.left < playerRect.left + playerRect.width && k.left + k.width > playerRect.left;
+                    bool oy = k.top < playerRect.top + playerRect.height && k.top + k.height > playerRect.top;
+                    if (ox && oy) {
+                        tornado->knifeActive = false;
+                        characters[0]->hit();
+                    }
+                }
+                continue;
+            }
+
+            // --- ALL OTHER ENEMIES ---
+            enemies[i]->Update(platforms, platformCount);
         }
 
+        // ---- DRAW ----
         window.clear(sf::Color(135, 206, 235));
 
-        for (int platformIndex = 0; platformIndex < platformCount; platformIndex++) {
-            platforms[platformIndex]->Draw(window, showHitboxes);
-        }
-        for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
-            enemies[enemyIndex]->Draw(window, showHitboxes);
-        }
-        for (int characterIndex = 0; characterIndex < characterCount; characterIndex++) {
-            characters[characterIndex]->Draw(window, showHitboxes);
-        }
+        for (int i = 0; i < platformCount; i++)
+            platforms[i]->Draw(window, showHitboxes);
 
-        // HUD
+        for (int i = 0; i < enemyCount; i++)
+            enemies[i]->Draw(window, showHitboxes);
+
+        for (int i = 0; i < characterCount; i++)
+            characters[i]->Draw(window, showHitboxes);
+
+        // ---- HUD ----
         sf::Text livesText;
         livesText.setFont(font);
         livesText.setString("Lives: " + std::to_string(characters[0]->getLives()));
@@ -299,13 +308,7 @@ int main() {
         window.display();
     }
 
-    for (int characterIndex = 0; characterIndex < characterCount; characterIndex++) 
-        delete characters[characterIndex];
-
-
-    for (int platformIndex = 0; platformIndex < platformCount; platformIndex++) 
-        delete platforms[platformIndex];
-
-    for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) 
-        delete enemies[enemyIndex];
+    for (int i = 0; i < characterCount; i++) delete characters[i];
+    for (int i = 0; i < platformCount; i++) delete platforms[i];
+    for (int i = 0; i < enemyCount; i++) delete enemies[i];
 }

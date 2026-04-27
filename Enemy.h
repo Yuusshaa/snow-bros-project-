@@ -16,7 +16,7 @@ public:
     bool isHalfFrozen() { return snowHits == 1; }
 
 
-void hitWithSnow() {
+virtual void hitWithSnow() {
     if (!isEncased() && !defrosted) {
         snowHits++;
         if (snowHits == 1) {
