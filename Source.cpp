@@ -9,6 +9,8 @@
 #include "LoginScreen.h"
 #include "Login.h"
 #include "Mogera.h"
+#include"1P2PScreen.h"
+#include"backgrounds.h"
 #include <cstdlib>
 #include <ctime>
 #include <string>
@@ -107,6 +109,13 @@ int main() {
     Login auth("users.txt");
     LoginScreen loginScreen(window, auth);
     loginScreen.showSplash();
+
+
+    PlayerScreen playerScreen(window);
+    bool playerSelected = playerScreen.run();
+    if (!playerSelected) return 0;
+
+
     bool loggedIn = loginScreen.run();
     if (!loggedIn) return 0;
 
@@ -114,7 +123,7 @@ int main() {
     int characterCount = 0;
     characters[characterCount++] = new Smash();
 
-    int currentLevel = 5;
+    int currentLevel = 1;
 
     Platform* platforms[15] = { nullptr };
     int platformCount = 0;
@@ -129,9 +138,22 @@ int main() {
 
     spawnEnemies(enemies, enemyCount, currentLevel);
 
+    /////////////////////////////////////////
+    Background background;
+    background.loadLevel(currentLevel);
+    /////////////////////////////////////////
+
+
+
+
+
     bool showHitboxes = false;
 
+    sf::Clock clock;
+
     while (window.isOpen()) {
+        float deltaTime = clock.restart().asSeconds();  
+        background.update(deltaTime);
         sf::Event event;
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed)
@@ -186,6 +208,7 @@ int main() {
                     levelComplete = false;
                     spawnPlatforms(platforms, platformCount, currentLevel);
                     spawnEnemies(enemies, enemyCount, currentLevel);
+                    background.loadLevel(currentLevel);
                     characters[0]->reset();
                 }
             }
@@ -269,7 +292,8 @@ int main() {
         }
 
         // ---- DRAW ----
-        window.clear(sf::Color(135, 206, 235));
+        window.clear();
+        background.draw(window);
 
         for (int i = 0; i < platformCount; i++)
             platforms[i]->Draw(window, showHitboxes);
