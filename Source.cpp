@@ -98,6 +98,7 @@ void spawnEnemies(Enemy** enemies, int& enemyCount, int level) {
 
 int main() {
     Botom::loadTexture();
+    FlyingFoogaFoog::loadFlyTexture();
     srand(time(0));
 
     sf::RenderWindow window(sf::VideoMode(800, 600), "Snow Bros");
@@ -131,7 +132,7 @@ int main() {
 
     Enemy* enemies[20] = { nullptr };
     int enemyCount = 0;
-
+    //ehheehhehehehehehee
     int maxLevels = 5;
     bool levelComplete = false;
     float levelCompleteTimer = 1.0f;
@@ -152,7 +153,7 @@ int main() {
     sf::Clock clock;
 
     while (window.isOpen()) {
-        float deltaTime = clock.restart().asSeconds();  
+        float deltaTime = clock.restart().asSeconds();
         background.update(deltaTime);
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -222,8 +223,33 @@ int main() {
                 allDead = false;
                 break;
             }
+
+            // Also check Mogera's children
+            Mogera* mogera = dynamic_cast<Mogera*>(enemies[i]);
+            if (mogera) {
+                for (int c = 0; c < mogera->childCount; c++) {
+                    if (!mogera->children[c]->isDead()) {
+                        allDead = false;
+                        break;
+                    }
+                }
+                if (!allDead) break;
+            }
         }
-        if (allDead && enemyCount > 0) {
+
+        // Count active gems
+        Smash* playerSmash = dynamic_cast<Smash*>(characters[0]);
+        int activeGemCount = 0;
+        if (playerSmash) {
+            for (int i = 0; i < playerSmash->gemCount; i++) {
+                if (playerSmash->gems[i]->isActive()) {
+                    activeGemCount++;
+                }
+            }
+        }
+
+        // Level complete only if all enemies dead AND all gems collected
+        if (allDead && activeGemCount == 0 && enemyCount > 0) {
             levelComplete = true;
             levelCompleteTimer = 120.f;
         }
@@ -328,6 +354,14 @@ int main() {
         levelText.setFillColor(sf::Color::White);
         levelText.setPosition(350, 10);
         window.draw(levelText);
+
+        sf::Text gemsText;
+        gemsText.setFont(font);
+        gemsText.setString("Gems: " + std::to_string(dynamic_cast<Smash*>(characters[0])->getGems()));
+        gemsText.setCharacterSize(30);
+        gemsText.setFillColor(sf::Color(255, 215, 0));
+        gemsText.setPosition(350, 50);
+        window.draw(gemsText);
 
         window.display();
     }

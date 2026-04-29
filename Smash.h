@@ -3,6 +3,7 @@
 #include "Platform.h"
 #include "Enemy.h"
 #include "Snowball.h"
+#include "Gem.h"
 
 class Smash : public Character {
 public:
@@ -12,10 +13,13 @@ public:
     int getLives() { return lives; }
     bool isGameOver() { return lives <= 0; }
     int getScore() { return score; }
+    int getGems() { return gemCurrency; }
 
 
     Snowball* snowballs[100000] = { nullptr };
     int snowballCount = 0;
+    Gem* gems[1000] = { nullptr };
+    int gemCount = 0;
 
 private:
     sf::Texture texture;
@@ -25,6 +29,7 @@ private:
     bool facingRight;
     int lives;
     int score;
+    int gemCurrency;
     float invincibleTimer;
     bool spaceHeld;
 

@@ -1,6 +1,7 @@
 #include "Smash.h"
 #include "Mogera.h"
 #include <iostream>
+#include <cstdlib>
 
 Smash::Smash() {
     rect = sf::FloatRect(100, 400, 60, 80);
@@ -9,6 +10,7 @@ Smash::Smash() {
     facingRight = true;
     lives = 10;
     score = 0;
+    gemCurrency = 0;
     invincibleTimer = 0.f;
     spaceHeld = false;
 
@@ -143,6 +145,26 @@ void Smash::Update(Platform** platforms, int platformCount, Enemy** enemies, int
             snowballs[i]->Update(platforms, platformCount);
     }
 
+    // Update gems
+    for (int i = 0; i < gemCount; i++) {
+        if (gems[i]->isActive())
+            gems[i]->Update(platforms, platformCount);
+    }
+
+    // Check if player collects gems
+    for (int i = 0; i < gemCount; i++) {
+        if (!gems[i]->isActive()) continue;
+
+        sf::FloatRect gRect = gems[i]->getRect();
+        bool overlapX = rect.left < gRect.left + gRect.width && rect.left + rect.width > gRect.left;
+        bool overlapY = rect.top < gRect.top + gRect.height && rect.top + rect.height > gRect.top;
+
+        if (overlapX && overlapY) {
+            gemCurrency += gems[i]->getValue();
+            gems[i]->collect();
+        }
+    }
+
     // Check if player walks into encased enemy to start rolling
     for (int i = 0; i < enemyCount; i++) {
         if (!enemies[i]->isEncased() || enemies[i]->isRolling() || enemies[i]->isDead()) continue;
@@ -174,11 +196,30 @@ void Smash::Update(Platform** platforms, int platformCount, Enemy** enemies, int
             bool overlapY = r1.top < r2.top + r2.height && r1.top + r1.height > r2.top;
 
             if (overlapX && overlapY) {
+                // Check if this is a Mogera (boss)
+                Mogera* mogera = dynamic_cast<Mogera*>(enemies[j]);
+                if (mogera) {
+                    // Boss drops 25 gems worth 8 each = 200 total
+                    for (int g = 0; g < 25; g++) {
+                        if (gemCount < 1000) {
+                            float offsetX = r2.left + (rand() % (int)r2.width);
+                            float offsetY = r2.top + (rand() % (int)r2.height);
+                            gems[gemCount++] = new Gem(offsetX, offsetY, 8);
+                        }
+                    }
+                }
+                else {
+                    // Regular enemies drop 1 gem worth 3
+                    if (gemCount < 1000) {
+                        gems[gemCount++] = new Gem(r2.left + r2.width / 2, r2.top, 3);
+                    }
+                }
+
                 enemies[j]->kill();
-                score += 100 + rand() % 400; // 100-500 points\
+                score += 100 + rand() % 400; // 100-500 points
 
             }
-            
+
         }
     }
 
@@ -208,6 +249,19 @@ void Smash::Update(Platform** platforms, int platformCount, Enemy** enemies, int
     }
     for (int i = 0; i < enemyCount; i++) {
         if (enemies[i]->isDead() && !enemies[i]->scoreCounted) {
+            // Check if this is Mogera (boss)
+            Mogera* mogera = dynamic_cast<Mogera*>(enemies[i]);
+            if (mogera) {
+                // Drop 25 gems worth 8 each = 200 total
+                for (int g = 0; g < 25; g++) {
+                    if (gemCount < 1000) {
+                        float offsetX = mogera->getRect().left + (rand() % (int)mogera->getRect().width);
+                        float offsetY = mogera->getRect().top + (rand() % (int)mogera->getRect().height);
+                        gems[gemCount++] = new Gem(offsetX, offsetY, 8);
+                    }
+                }
+            }
+
             score += 200;
             enemies[i]->scoreCounted = true;
         }
@@ -223,6 +277,12 @@ void Smash::Draw(sf::RenderWindow& window, bool showHitbox) {
     for (int i = 0; i < snowballCount; i++) {
         if (snowballs[i]->isActive())
             snowballs[i]->Draw(window, showHitbox);
+    }
+
+    // Draw gems
+    for (int i = 0; i < gemCount; i++) {
+        if (gems[i]->isActive())
+            gems[i]->Draw(window);
     }
 
     if (showHitbox) {

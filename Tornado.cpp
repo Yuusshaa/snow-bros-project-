@@ -28,6 +28,36 @@ void Tornado::Update(Platform** platforms, int platformCount, float playerX, flo
         return;
     updateDefrost();
 
+    if (rolling) {
+        currentAnim = &rollAnim;
+        currentAnim->update();
+
+        rect.left += (rollingRight ? 6.f : -6.f);
+        velocityY += 0.6f;
+        rect.top += velocityY;
+
+        if (rect.left <= 0)
+            rect.left = 0, rollingRight = true;
+        if (rect.left + rect.width >= 800)
+            rect.left = 800 - rect.width, rollingRight = false;
+
+        for (int i = 1; i < platformCount; i++)
+            checkPlatformCollision(platforms[i]->getRect());
+
+        if (rect.top + rect.height >= 560) {
+            rect.top = 560 - rect.height;
+            velocityY = 0.f;
+        }
+
+        // corner kill zones
+        if (rect.left <= 0 && rect.top + rect.height >= 550 && rect.top + rect.height <= 610) {
+            dead = true; return;
+        }
+        if (rect.left + rect.width >= 800 && rect.top + rect.height >= 550 && rect.top + rect.height <= 610) {
+            dead = true; return;
+        }
+        return;
+    }
     if (isHalfFrozen()) {  // ADD THIS
         velocityY += 0.6f;
         rect.top += velocityY;
@@ -70,7 +100,8 @@ void Tornado::Update(Platform** platforms, int platformCount, float playerX, flo
 
     for (int platformIndex = 0; platformIndex < platformCount; platformIndex++)
         checkPlatformCollision(platforms[platformIndex]->getRect());
-}
+    }
+
 
 void Tornado::Draw(sf::RenderWindow& window, bool showHitbox) {
     if (dead) 
