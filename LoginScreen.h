@@ -39,4 +39,5 @@ public:
     void showSplash();
     bool run();  
     //game runs when logjin is successful
+    void clearInputs();
 };

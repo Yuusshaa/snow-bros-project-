@@ -40,7 +40,7 @@ void Background::loadLevel(int level)
         frames[8].loadFromFile("lvl2bgs/lvl2_9.png");
         frames[9].loadFromFile("lvl2bgs/lvl2_10.png");
         frames[10].loadFromFile("lvl2bgs/lvl2_11.png");
-		frames[11].loadFromFile("lvl2bgs/lvl2_12.png");
+        frames[11].loadFromFile("lvl2bgs/lvl2_12.png");
         frames[12].loadFromFile("lvl2bgs/lvl2_13.png");
         frames[13].loadFromFile("lvl2bgs/lvl2_14.png");
         frames[14].loadFromFile("lvl2bgs/lvl2_15.png");
@@ -99,7 +99,7 @@ void Background::loadLevel(int level)
     else if (level == 4)
     {
         totalFrames = 13;
-		frames[0].loadFromFile("lvl4bgs/ezgif-frame-001.png");
+        frames[0].loadFromFile("lvl4bgs/ezgif-frame-001.png");
         frames[1].loadFromFile("lvl4bgs/ezgif-frame-002.png");
         frames[2].loadFromFile("lvl4bgs/ezgif-frame-003.png");
         frames[3].loadFromFile("lvl4bgs/ezgif-frame-004.png");
@@ -117,9 +117,8 @@ void Background::loadLevel(int level)
     else if (level == 5)
     {
         totalFrames = 1;
-		frames[0].loadFromFile("lvl5.jpeg");
+        frames[0].loadFromFile("lvl5.jpeg");
     }
-
 
     else if (level == 6)
     {
@@ -142,7 +141,7 @@ void Background::loadLevel(int level)
     else if (level == 7)
     {
         totalFrames = 20;
-		frames[0].loadFromFile("lvl7bgs/ezgif-frame-001.png");
+        frames[0].loadFromFile("lvl7bgs/ezgif-frame-001.png");
         frames[1].loadFromFile("lvl7bgs/ezgif-frame-002.png");
         frames[2].loadFromFile("lvl7bgs/ezgif-frame-003.png");
         frames[3].loadFromFile("lvl7bgs/ezgif-frame-004.png");
@@ -161,13 +160,13 @@ void Background::loadLevel(int level)
         frames[16].loadFromFile("lvl7bgs/ezgif-frame-017.png");
         frames[17].loadFromFile("lvl7bgs/ezgif-frame-018.png");
         frames[18].loadFromFile("lvl7bgs/ezgif-frame-019.png");
-		frames[19].loadFromFile("lvl7bgs/ezgif-frame-020.png");
+        frames[19].loadFromFile("lvl7bgs/ezgif-frame-020.png");
     }
 
     else if (level == 8)
     {
         totalFrames = 13;
-		frames[0].loadFromFile("lvl8bgs/ezgif-frame-001.png");
+        frames[0].loadFromFile("lvl8bgs/ezgif-frame-001.png");
         frames[1].loadFromFile("lvl8bgs/ezgif-frame-002.png");
         frames[2].loadFromFile("lvl8bgs/ezgif-frame-003.png");
         frames[3].loadFromFile("lvl8bgs/ezgif-frame-004.png");
@@ -178,14 +177,14 @@ void Background::loadLevel(int level)
         frames[8].loadFromFile("lvl8bgs/ezgif-frame-009.png");
         frames[9].loadFromFile("lvl8bgs/ezgif-frame-010.png");
         frames[10].loadFromFile("lvl8bgs/ezgif-frame-011.png");
-        frames[11].loadFromFile("lvl8bgs/ezgif-frame-012png");
+        frames[11].loadFromFile("lvl8bgs/ezgif-frame-012.png");
         frames[12].loadFromFile("lvl8bgs/ezgif-frame-013.png");
     }
 
     else if (level == 9)
     {
         totalFrames = 42;
-		frames[0].loadFromFile("lvl9bgs/ezgif-frame-001.png");
+        frames[0].loadFromFile("lvl9bgs/ezgif-frame-001.png");
         frames[1].loadFromFile("lvl9bgs/ezgif-frame-002.png");
         frames[2].loadFromFile("lvl9bgs/ezgif-frame-003.png");
         frames[3].loadFromFile("lvl9bgs/ezgif-frame-004.png");
@@ -204,8 +203,8 @@ void Background::loadLevel(int level)
         frames[16].loadFromFile("lvl9bgs/ezgif-frame-017.png");
         frames[17].loadFromFile("lvl9bgs/ezgif-frame-018.png");
         frames[18].loadFromFile("lvl9bgs/ezgif-frame-019.png");
-		frames[19].loadFromFile("lvl9bgs/ezgif-frame-020.png");
-		frames[20].loadFromFile("lvl9bgs/ezgif-frame-021.png");
+        frames[19].loadFromFile("lvl9bgs/ezgif-frame-020.png");
+        frames[20].loadFromFile("lvl9bgs/ezgif-frame-021.png");
         frames[21].loadFromFile("lvl9bgs/ezgif-frame-022.png");
         frames[22].loadFromFile("lvl9bgs/ezgif-frame-023.png");
         frames[23].loadFromFile("lvl9bgs/ezgif-frame-024.png");
@@ -225,14 +224,14 @@ void Background::loadLevel(int level)
         frames[37].loadFromFile("lvl9bgs/ezgif-frame-038.png");
         frames[38].loadFromFile("lvl9bgs/ezgif-frame-039.png");
         frames[39].loadFromFile("lvl9bgs/ezgif-frame-040.png");
-		frames[40].loadFromFile("lvl9bgs/ezgif-frame-041.png");
-		frames[41].loadFromFile("lvl9bgs/ezgif-frame-042.png");
+        frames[40].loadFromFile("lvl9bgs/ezgif-frame-041.png");
+        frames[41].loadFromFile("lvl9bgs/ezgif-frame-042.png");
     }
 
     else if (level == 10)
     {
         totalFrames = 4;
-		frames[0].loadFromFile("lvl10bgs/ezgif-frame-001.png");
+        frames[0].loadFromFile("lvl10bgs/ezgif-frame-001.png");
         frames[1].loadFromFile("lvl10bgs/ezgif-frame-002.png");
         frames[2].loadFromFile("lvl10bgs/ezgif-frame-003.png");
         frames[3].loadFromFile("lvl10bgs/ezgif-frame-004.png");
@@ -241,7 +240,7 @@ void Background::loadLevel(int level)
     else if (level == 11)
     {
         totalFrames = 12;
-		frames[0].loadFromFile("lvl11bgs/ezgif-frame-001.png");
+        frames[0].loadFromFile("lvl11bgs/ezgif-frame-001.png");
         frames[1].loadFromFile("lvl11bgs/ezgif-frame-002.png");
         frames[2].loadFromFile("lvl11bgs/ezgif-frame-003.png");
         frames[3].loadFromFile("lvl11bgs/ezgif-frame-004.png");
@@ -255,7 +254,8 @@ void Background::loadLevel(int level)
         frames[11].loadFromFile("lvl11bgs/ezgif-frame-012.png");
     }
 
-    sprite.setTexture(frames[0]);
+    // CRITICAL FIX: Clear sprite's reference to old texture, then load new one with proper scaling
+    sprite.setTexture(frames[0], true);  // true = reset texture rectangle
     sprite.setScale
     (
         800.f / frames[0].getSize().x,
@@ -273,7 +273,7 @@ void Background::update(float deltaTime)
         currentFrame++;
         if (currentFrame >= totalFrames) currentFrame = 0;  // loop back to start
 
-        sprite.setTexture(frames[currentFrame]);
+        sprite.setTexture(frames[currentFrame], true);  // true = reset texture rectangle
     }
 }
 

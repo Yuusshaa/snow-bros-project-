@@ -106,24 +106,25 @@ void LoginScreen::showSplash()
 
     while (window.isOpen())
     {
-        sf::Event e;
-        while (window.pollEvent(e))
+        sf::Event event;
+        while (window.pollEvent(event))
         {
-            if (e.type == sf::Event::Closed)
+            if (event.type == sf::Event::Closed)
             {
                 window.close();
                 return;
             }
         }
 
-        float elapsed = clock.getElapsedTime().asSeconds();
+        float elapsedTime = clock.getElapsedTime().asSeconds();
 
         // fade out in the last 1 second
         float alpha = 255.f;
-        if (elapsed > 4.f)
-            alpha = 255.f * (1.f - (elapsed - 4.f));  // goes from 255 to 0 over 1 second
+        if (elapsedTime > 4.f)
+            alpha = 255.f * (1.f - (elapsedTime - 4.f));  // goes from 255 to 0 over 1 second
 
-        if (elapsed >= 5.f) return;  // done, go to login
+        if (elapsedTime >= 5.f) 
+            return;  // done, go to login
 
         splashSprite.setColor(sf::Color(255, 255, 255, (sf::Uint8)alpha));
 
@@ -139,18 +140,18 @@ bool LoginScreen::run()
 {
     while (window.isOpen())
     {
-        sf::Event e;
-        while (window.pollEvent(e))
+        sf::Event event;
+        while (window.pollEvent(event))
         {
-            if (e.type == sf::Event::Closed)
+            if (event.type == sf::Event::Closed)
             {
                 window.close();
                 return false;
             }
 
-            if (e.type == sf::Event::MouseButtonPressed)
+            if (event.type == sf::Event::MouseButtonPressed)
             {
-                sf::Vector2f mouse(e.mouseButton.x, e.mouseButton.y);
+                sf::Vector2f mouse(event.mouseButton.x, event.mouseButton.y);
 
                 if (usernameBox.getGlobalBounds().contains(mouse))
                 {
@@ -167,7 +168,7 @@ bool LoginScreen::run()
 
                 else if (loginButton.getGlobalBounds().contains(mouse))
                 {
-                    if (usernameInput.empty() || passwordInput.empty())
+                    if ((usernameInput.empty()) || (passwordInput.empty()))
                     {
                         statusMessage = "Please fill in both fields!";
                     }
@@ -183,7 +184,7 @@ bool LoginScreen::run()
 
                 else if (registerButton.getGlobalBounds().contains(mouse))
                 {
-                    if (usernameInput.empty() || passwordInput.empty())
+                    if ((usernameInput.empty()) || (passwordInput.empty()))
                     {
                         statusMessage = "Please fill in both fields!";
                     }
@@ -200,25 +201,25 @@ bool LoginScreen::run()
                 }
             }
 
-            if (e.type == sf::Event::TextEntered)
+            if (event.type == sf::Event::TextEntered)
             {
-                if (e.text.unicode == 8)
+                if (event.text.unicode == 8)
                 {
-                    if (usernameActive && !usernameInput.empty())
-                        usernameInput.pop_back();
-                    else if (!usernameActive && !passwordInput.empty())
-                        passwordInput.pop_back();
+                    if ((usernameActive) && (!usernameInput.empty()))
+                        usernameInput = usernameInput.substr(0, usernameInput.length() - 1);
+                    else if ((!usernameActive) && (!passwordInput.empty()))
+                        passwordInput = passwordInput.substr(0, passwordInput.length() - 1);
                 }
-                else if (e.text.unicode >= 32 && e.text.unicode < 128)
+                else if ((event.text.unicode >= 32) && (event.text.unicode < 128))
                 {
-                    if (usernameActive && usernameInput.length() < 20)
-                        usernameInput += (char)e.text.unicode;
-                    else if (!usernameActive && passwordInput.length() < 20)
-                        passwordInput += (char)e.text.unicode;
+                    if ((usernameActive) && (usernameInput.length() < 20))
+                        usernameInput += (char)event.text.unicode;
+                    else if ((!usernameActive) && (passwordInput.length() < 20))
+                        passwordInput += (char)event.text.unicode;
                 }
             }
 
-            if (e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::Tab)
+            if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Tab))
             {
                 usernameActive = !usernameActive;
                 if (usernameActive)
@@ -257,4 +258,14 @@ bool LoginScreen::run()
         window.display();
     }
     return false;
+}
+
+void LoginScreen::clearInputs() {
+    usernameInput = "";
+    passwordInput = "";
+    statusMessage = "";
+    usernameActive = true;
+    usernameBox.setOutlineColor(sf::Color::Blue);
+    passwordBox.setOutlineColor(sf::Color::White);
+    statusText.setFillColor(sf::Color::Red);
 }

@@ -2,9 +2,41 @@
 #include "Mogera.h"
 #include <iostream>
 #include <cstdlib>
+#include <cmath>
 
-Smash::Smash() {
-    rect = sf::FloatRect(100, 400, 60, 80);
+// Static shared gems for both players
+Gem* Smash::sharedGems[1000] = {};
+int Smash::sharedGemCount = 0;
+
+void Smash::clearGems() {
+    for (int i = 0; i < sharedGemCount; i++) {
+        if (sharedGems[i] != nullptr) {
+            delete sharedGems[i];
+            sharedGems[i] = nullptr;
+        }
+    }
+    sharedGemCount = 0;
+}
+
+Smash::Smash(int playerNumber) {
+    playerNum = playerNumber;
+
+    // Player 1 starts left, Player 2 starts right
+    if (playerNum == 1) {
+        rect = sf::FloatRect(200, 400, 60, 80);
+        moveLeft = sf::Keyboard::A;
+        moveRight = sf::Keyboard::D;
+        jumpKey = sf::Keyboard::Space;
+        shootKey = sf::Keyboard::E;
+    }
+    else {
+        rect = sf::FloatRect(540, 400, 60, 80);
+        moveLeft = sf::Keyboard::Left;
+        moveRight = sf::Keyboard::Right;
+        jumpKey = sf::Keyboard::Up;
+        shootKey = sf::Keyboard::RShift;
+    }
+
     velocityY = 0.f;
     isGrounded = false;
     facingRight = true;
@@ -12,10 +44,13 @@ Smash::Smash() {
     score = 0;
     gemCurrency = 0;
     invincibleTimer = 0.f;
-    spaceHeld = false;
+    shootHeld = false;
 
-    if (!texture.loadFromFile("Image.png")) {
-        std::cout << "Failed to load image!" << std::endl;
+    // Player 2 uses a different image
+    std::string imageName = (playerNum == 1) ? "Image.png" : "Image2.png";
+    if (!texture.loadFromFile(imageName)) {
+        // fallback to same image if Image2 doesnt exist
+        texture.loadFromFile("Image.png");
     }
 
     sprite.setTexture(texture);
@@ -26,19 +61,15 @@ Smash::Smash() {
 }
 
 void Smash::throwSnowball() {
-    if (snowballCount >= 100000) 
-        return;
+    if (snowballCount >= 100000) return;
     float spawnX = facingRight ? rect.left + rect.width : rect.left - 20;
-
     snowballs[snowballCount++] = new Snowball(spawnX, rect.top + rect.height / 2, facingRight);
-
 }
 
 void Smash::checkPlatformCollision(sf::FloatRect platform) {
-
     bool withinX = (rect.left + rect.width > platform.left) && (rect.left < platform.left + platform.width);
-    bool fallingOnto = (rect.top + rect.height >= platform.top) && 
-                       (rect.top + rect.height <= platform.top + platform.height + velocityY);
+    bool fallingOnto = (rect.top + rect.height >= platform.top) &&
+        (rect.top + rect.height <= platform.top + platform.height + velocityY);
 
     if (withinX && fallingOnto && velocityY >= 0) {
         rect.top = platform.top - rect.height;
@@ -48,20 +79,17 @@ void Smash::checkPlatformCollision(sf::FloatRect platform) {
 }
 
 void Smash::checkEnemyCollision(Enemy** enemies, int enemyCount) {
-    if (invincibleTimer > 0) 
-        return;
+    if (invincibleTimer > 0) return;
 
-    for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
-        if (enemies[enemyIndex]->isDead()) 
-            continue;
-        if (enemies[enemyIndex]->isEncased()) 
-            continue; // cant hurt you when encased
+    for (int i = 0; i < enemyCount; i++) {
+        if (enemies[i]->isDead()) continue;
+        if (enemies[i]->isEncased()) continue;
 
-        sf::FloatRect enemyRect = enemies[enemyIndex]->getRect();
-        bool overlapX = (rect.left < enemyRect.left + enemyRect.width) && 
-                        (rect.left + rect.width > enemyRect.left);
-        bool overlapY = (rect.top < enemyRect.top + enemyRect.height) && 
-                        (rect.top + rect.height > enemyRect.top);
+        sf::FloatRect enemyRect = enemies[i]->getRect();
+        bool overlapX = rect.left < enemyRect.left + enemyRect.width &&
+            rect.left + rect.width > enemyRect.left;
+        bool overlapY = rect.top < enemyRect.top + enemyRect.height &&
+            rect.top + rect.height > enemyRect.top;
 
         if (overlapX && overlapY) {
             lives--;
@@ -87,7 +115,6 @@ void Smash::checkSnowballEnemyCollision(Enemy** enemies, int enemyCount) {
 
             if (!overlapX || !overlapY) continue;
 
-            // Mogera takes health damage instead of snow
             Mogera* mogera = dynamic_cast<Mogera*>(enemies[e]);
             if (mogera) {
                 mogera->hitWithSnow();
@@ -95,13 +122,10 @@ void Smash::checkSnowballEnemyCollision(Enemy** enemies, int enemyCount) {
                 continue;
             }
 
-            // Normal enemies
             if (enemies[e]->isRolling()) continue;
 
             enemies[e]->hitWithSnow();
-            if (enemies[e]->isEncased()) {
-                score += 100;
-            }
+            if (enemies[e]->isEncased()) score += 100;
             snowballs[s]->deactivate();
         }
     }
@@ -114,112 +138,97 @@ void Smash::Update(Platform** platforms, int platformCount, Enemy** enemies, int
 
     if (invincibleTimer > 0) invincibleTimer--;
 
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+    if (sf::Keyboard::isKeyPressed(moveLeft)) {
         rect.left -= speed;
         facingRight = false;
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+    if (sf::Keyboard::isKeyPressed(moveRight)) {
         rect.left += speed;
         facingRight = true;
     }
-
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && isGrounded) {
+    if (sf::Keyboard::isKeyPressed(jumpKey) && isGrounded) {
         velocityY = jumpForce;
         isGrounded = false;
     }
-
-    // Throw snowball with J - spaceHeld prevents holding J to spam
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::J)) {
-        if (!spaceHeld) {
+    if (sf::Keyboard::isKeyPressed(shootKey)) {
+        if (!shootHeld) {
             throwSnowball();
-            spaceHeld = true;
+            shootHeld = true;
         }
     }
     else {
-        spaceHeld = false;
+        shootHeld = false;
     }
 
-    // Update snowballs
     for (int i = 0; i < snowballCount; i++) {
         if (snowballs[i]->isActive())
             snowballs[i]->Update(platforms, platformCount);
     }
 
-    // Update gems
-    for (int i = 0; i < gemCount; i++) {
-        if (gems[i]->isActive())
-            gems[i]->Update(platforms, platformCount);
+    for (int i = 0; i < sharedGemCount; i++) {
+        if (sharedGems[i]->isActive())
+            sharedGems[i]->Update(platforms, platformCount);
     }
 
-    // Check if player collects gems
-    for (int i = 0; i < gemCount; i++) {
-        if (!gems[i]->isActive()) continue;
-
-        sf::FloatRect gRect = gems[i]->getRect();
+    for (int i = 0; i < sharedGemCount; i++) {
+        if (!sharedGems[i]->isActive()) continue;
+        sf::FloatRect gRect = sharedGems[i]->getRect();
         bool overlapX = rect.left < gRect.left + gRect.width && rect.left + rect.width > gRect.left;
         bool overlapY = rect.top < gRect.top + gRect.height && rect.top + rect.height > gRect.top;
-
         if (overlapX && overlapY) {
-            gemCurrency += gems[i]->getValue();
-            gems[i]->collect();
+            gemCurrency += sharedGems[i]->getValue();
+            sharedGems[i]->collect();
         }
     }
 
-    // Check if player walks into encased enemy to start rolling
+    // Kick encased enemies
     for (int i = 0; i < enemyCount; i++) {
         if (!enemies[i]->isEncased() || enemies[i]->isRolling() || enemies[i]->isDead()) continue;
-
         sf::FloatRect eRect = enemies[i]->getRect();
-        bool overlapX = rect.left < eRect.left + eRect.width &&
-            rect.left + rect.width > eRect.left;
-        bool overlapY = rect.top < eRect.top + eRect.height &&
-            rect.top + rect.height > eRect.top;
-
-        if (overlapX && overlapY) {
-            // Kick in direction player is facing
+        bool overlapX = rect.left < eRect.left + eRect.width && rect.left + rect.width > eRect.left;
+        bool overlapY = rect.top < eRect.top + eRect.height && rect.top + rect.height > eRect.top;
+        if (overlapX && overlapY)
             enemies[i]->startRolling(facingRight);
-        }
     }
 
-    // Check rolling enemy kills other enemies
+    // Rolling kills enemies
     for (int i = 0; i < enemyCount; i++) {
         if (!enemies[i]->isRolling() || enemies[i]->isDead()) continue;
-
         for (int j = 0; j < enemyCount; j++) {
-            if (i == j) continue;
-            if (enemies[j]->isDead()) continue;
-
+            if (i == j || enemies[j]->isDead()) continue;
             sf::FloatRect r1 = enemies[i]->getRect();
             sf::FloatRect r2 = enemies[j]->getRect();
-
             bool overlapX = r1.left < r2.left + r2.width && r1.left + r1.width > r2.left;
             bool overlapY = r1.top < r2.top + r2.height && r1.top + r1.height > r2.top;
-
             if (overlapX && overlapY) {
-                // Check if this is a Mogera (boss)
                 Mogera* mogera = dynamic_cast<Mogera*>(enemies[j]);
                 if (mogera) {
-                    // Boss drops 25 gems worth 8 each = 200 total
                     for (int g = 0; g < 25; g++) {
-                        if (gemCount < 1000) {
+                        if (sharedGemCount < 1000) {
                             float offsetX = r2.left + (rand() % (int)r2.width);
                             float offsetY = r2.top + (rand() % (int)r2.height);
-                            gems[gemCount++] = new Gem(offsetX, offsetY, 8);
+                            Gem* newGem = new Gem(offsetX, offsetY, 8);
+
+                            // Random velocity in all directions with upward bias
+                            float angle = (rand() % 360) * 3.14159f / 180.f;
+                            float speed = 4.f + (rand() % 4); // 4-8 speed
+                            float vx = cosf(angle) * speed;
+                            float vy = sinf(angle) * speed; // positive = upward initially
+                            // Make sure they go up initially
+                            if (vy > 0) vy = -vy; // force upward
+                            newGem->setVelocity(vx, vy);
+
+                            sharedGems[sharedGemCount++] = newGem;
                         }
                     }
                 }
                 else {
-                    // Regular enemies drop 1 gem worth 3
-                    if (gemCount < 1000) {
-                        gems[gemCount++] = new Gem(r2.left + r2.width / 2, r2.top, 3);
-                    }
+                    if (sharedGemCount < 1000)
+                        sharedGems[sharedGemCount++] = new Gem(r2.left + r2.width / 2, r2.top, 3);
                 }
-
                 enemies[j]->kill();
-                score += 100 + rand() % 400; // 100-500 points
-
+                score += 100 + rand() % 400;
             }
-
         }
     }
 
@@ -230,9 +239,8 @@ void Smash::Update(Platform** platforms, int platformCount, Enemy** enemies, int
     rect.top += velocityY;
     isGrounded = false;
 
-    for (int i = 0; i < platformCount; i++) {
+    for (int i = 0; i < platformCount; i++)
         checkPlatformCollision(platforms[i]->getRect());
-    }
 
     if (rect.left < 0) rect.left = 0;
     if (rect.left + rect.width > 800) rect.left = 800 - rect.width;
@@ -247,21 +255,30 @@ void Smash::Update(Platform** platforms, int platformCount, Enemy** enemies, int
         sprite.setScale(rect.width / sprite.getLocalBounds().width, rect.height / sprite.getLocalBounds().height);
         sprite.setOrigin(0, 0);
     }
+
     for (int i = 0; i < enemyCount; i++) {
         if (enemies[i]->isDead() && !enemies[i]->scoreCounted) {
-            // Check if this is Mogera (boss)
             Mogera* mogera = dynamic_cast<Mogera*>(enemies[i]);
             if (mogera) {
-                // Drop 25 gems worth 8 each = 200 total
                 for (int g = 0; g < 25; g++) {
-                    if (gemCount < 1000) {
+                    if (sharedGemCount < 1000) {
                         float offsetX = mogera->getRect().left + (rand() % (int)mogera->getRect().width);
                         float offsetY = mogera->getRect().top + (rand() % (int)mogera->getRect().height);
-                        gems[gemCount++] = new Gem(offsetX, offsetY, 8);
+                        Gem* newGem = new Gem(offsetX, offsetY, 8);
+
+                        // Random velocity in all directions with upward bias
+                        float angle = (rand() % 360) * 3.14159f / 180.f;
+                        float speed = 4.f + (rand() % 4); // 4-8 speed
+                        float vx = cosf(angle) * speed;
+                        float vy = sinf(angle) * speed; // positive = upward initially
+                        // Make sure they go up initially
+                        if (vy > 0) vy = -vy; // force upward
+                        newGem->setVelocity(vx, vy);
+
+                        sharedGems[sharedGemCount++] = newGem;
                     }
                 }
             }
-
             score += 200;
             enemies[i]->scoreCounted = true;
         }
@@ -273,33 +290,38 @@ void Smash::Draw(sf::RenderWindow& window, bool showHitbox) {
 
     window.draw(sprite);
 
-    // Draw snowballs
     for (int i = 0; i < snowballCount; i++) {
         if (snowballs[i]->isActive())
             snowballs[i]->Draw(window, showHitbox);
     }
 
-    // Draw gems
-    for (int i = 0; i < gemCount; i++) {
-        if (gems[i]->isActive())
-            gems[i]->Draw(window);
+    for (int i = 0; i < sharedGemCount; i++) {
+        if (sharedGems[i]->isActive())
+            sharedGems[i]->Draw(window);
     }
 
     if (showHitbox) {
         sf::RectangleShape hitbox(sf::Vector2f(rect.width, rect.height));
         hitbox.setPosition(rect.left, rect.top);
         hitbox.setFillColor(sf::Color::Transparent);
-        hitbox.setOutlineColor(sf::Color::Green);
+        hitbox.setOutlineColor(playerNum == 1 ? sf::Color::Green : sf::Color::Cyan);
         hitbox.setOutlineThickness(2);
         window.draw(hitbox);
     }
 }
+
 void Smash::reset() {
-    rect.left = 370;  // middle of screen
-    rect.top = 470;   // near bottom
+    if (playerNum == 1) {
+        rect.left = 200;
+    }
+    else {
+        rect.left = 540;
+    }
+    rect.top = 470;
     velocityY = 0.f;
     isGrounded = false;
 }
+
 void Smash::hit() {
     if (invincibleTimer > 0) return;
     lives--;

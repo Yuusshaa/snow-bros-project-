@@ -68,18 +68,19 @@ int Login::getNextUserID()
 {
     ifstream readFile(filename);
     string line;
-    int count = 0;
-    while (getline(readFile, line)) count++;
+    int lineCount = 0;
+    while (getline(readFile, line)) 
+        lineCount++;
     readFile.close();
-    return count + 1;
+    return lineCount + 1;
 }
 
 string Login::hashPassword(string password)
 {
     int hash = 0;
-    for (int i = 0; i < password.length(); i++)
+    for (int passwordIndex = 0; passwordIndex < password.length(); passwordIndex++)
     {
-        hash = hash + (password[i] * (i + 1));
+        hash = hash + (password[passwordIndex] * (passwordIndex + 1));
     }
     return to_string(hash);
 }

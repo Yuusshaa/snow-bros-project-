@@ -9,8 +9,9 @@
 #include "LoginScreen.h"
 #include "Login.h"
 #include "Mogera.h"
-#include"1P2PScreen.h"
-#include"backgrounds.h"
+#include "Gem.h"
+#include "1P2PScreen.h"
+#include "backgrounds.h"
 #include <cstdlib>
 #include <ctime>
 #include <string>
@@ -99,7 +100,7 @@ void spawnEnemies(Enemy** enemies, int& enemyCount, int level) {
 int main() {
     Botom::loadTexture();
     FlyingFoogaFoog::loadFlyTexture();
-    srand(time(0));
+    srand((unsigned int)time(0));
 
     sf::RenderWindow window(sf::VideoMode(800, 600), "Snow Bros");
     window.setFramerateLimit(60);
@@ -107,24 +108,51 @@ int main() {
     sf::Font font;
     font.loadFromFile("Silkscreen-Regular.ttf");
 
+    // ---- 1P/2P SCREEN ----
+    PlayerScreen playerScreen(window);
+    int numPlayers = playerScreen.run();
+    if (numPlayers == 0) return 0;
+
+    // ---- LOGIN ----
     Login auth("users.txt");
     LoginScreen loginScreen(window, auth);
+
     loginScreen.showSplash();
 
+    // Player 1 login
+    sf::Text loginTitle;
+    loginTitle.setFont(font);
+    loginTitle.setCharacterSize(40);
+    loginTitle.setFillColor(sf::Color::White);
+    loginTitle.setPosition(200, 50);
+    loginTitle.setString("PLAYER 1 - LOGIN");
+    window.clear(sf::Color::Black);
+    window.draw(loginTitle);
+    window.display();
 
-    PlayerScreen playerScreen(window);
-    bool playerSelected = playerScreen.run();
-    if (!playerSelected) return 0;
+    bool loggedIn1 = loginScreen.run();
+    if (!loggedIn1) return 0;
 
+    // Player 2 login if 2 player mode
+    if (numPlayers == 2) {
+        loginScreen.clearInputs();  // Clear inputs for Player 2
+        loginTitle.setString("PLAYER 2 - LOGIN");
+        window.clear(sf::Color::Black);
+        window.draw(loginTitle);
+        window.display();
 
-    bool loggedIn = loginScreen.run();
-    if (!loggedIn) return 0;
+        bool loggedIn2 = loginScreen.run();
+        if (!loggedIn2) return 0;
+    }
 
+    // ---- SETUP ----
     Character* characters[10] = { nullptr };
     int characterCount = 0;
-    characters[characterCount++] = new Smash();
+    characters[characterCount++] = new Smash(1);
+    if (numPlayers == 2)
+        characters[characterCount++] = new Smash(2);
 
-    int currentLevel = 1;
+    int currentLevel = 5;
 
     Platform* platforms[15] = { nullptr };
     int platformCount = 0;
@@ -132,29 +160,23 @@ int main() {
 
     Enemy* enemies[20] = { nullptr };
     int enemyCount = 0;
-    //ehheehhehehehehehee
+
     int maxLevels = 5;
     bool levelComplete = false;
     float levelCompleteTimer = 1.0f;
 
     spawnEnemies(enemies, enemyCount, currentLevel);
 
-    /////////////////////////////////////////
     Background background;
     background.loadLevel(currentLevel);
-    /////////////////////////////////////////
-
-
-
-
 
     bool showHitboxes = false;
-
     sf::Clock clock;
 
     while (window.isOpen()) {
         float deltaTime = clock.restart().asSeconds();
         background.update(deltaTime);
+
         sf::Event event;
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed)
@@ -164,15 +186,34 @@ int main() {
         }
 
         // ---- GAME OVER ----
-        if (characters[0]->isGameOver()) {
+        bool allPlayersGameOver = true;
+        for (int i = 0; i < characterCount; i++) {
+            if (!characters[i]->isGameOver()) {
+                allPlayersGameOver = false;
+                break;
+            }
+        }
+
+        if (allPlayersGameOver) {
             window.clear(sf::Color::Black);
             sf::Text gameOverText;
             gameOverText.setFont(font);
-            gameOverText.setString("GAME OVER\nScore: " + std::to_string(characters[0]->getScore()));
-            gameOverText.setCharacterSize(60);
+            gameOverText.setString("GAME OVER\nP1 Score: " + std::to_string(characters[0]->getScore()));
+            gameOverText.setCharacterSize(50);
             gameOverText.setFillColor(sf::Color::Red);
-            gameOverText.setPosition(200, 250);
+            gameOverText.setPosition(200, 200);
             window.draw(gameOverText);
+
+            if (characterCount > 1) {
+                sf::Text p2ScoreText;
+                p2ScoreText.setFont(font);
+                p2ScoreText.setString("P2 Score: " + std::to_string(characters[1]->getScore()));
+                p2ScoreText.setCharacterSize(50);
+                p2ScoreText.setFillColor(sf::Color::Cyan);
+                p2ScoreText.setPosition(200, 320);
+                window.draw(p2ScoreText);
+            }
+
             window.display();
             continue;
         }
@@ -181,13 +222,25 @@ int main() {
         if (levelComplete) {
             levelCompleteTimer--;
             window.clear(sf::Color::Black);
+
             sf::Text lvlText;
             lvlText.setFont(font);
-            lvlText.setString("LEVEL " + std::to_string(currentLevel) + " COMPLETE!\nScore: " + std::to_string(characters[0]->getScore()));
-            lvlText.setCharacterSize(50);
+            lvlText.setString("LEVEL " + std::to_string(currentLevel) + " COMPLETE!\nP1 Score: " + std::to_string(characters[0]->getScore()));
+            lvlText.setCharacterSize(45);
             lvlText.setFillColor(sf::Color::Green);
-            lvlText.setPosition(150, 250);
+            lvlText.setPosition(150, 200);
             window.draw(lvlText);
+
+            if (characterCount > 1) {
+                sf::Text p2lvlText;
+                p2lvlText.setFont(font);
+                p2lvlText.setString("P2 Score: " + std::to_string(characters[1]->getScore()));
+                p2lvlText.setCharacterSize(45);
+                p2lvlText.setFillColor(sf::Color::Cyan);
+                p2lvlText.setPosition(150, 320);
+                window.draw(p2lvlText);
+            }
+
             window.display();
 
             if (levelCompleteTimer <= 0) {
@@ -196,11 +249,22 @@ int main() {
                     window.clear(sf::Color::Black);
                     sf::Text winText;
                     winText.setFont(font);
-                    winText.setString("YOU WIN!\nFinal Score: " + std::to_string(characters[0]->getScore()));
-                    winText.setCharacterSize(60);
+                    winText.setString("YOU WIN!\nP1 Score: " + std::to_string(characters[0]->getScore()));
+                    winText.setCharacterSize(50);
                     winText.setFillColor(sf::Color::Yellow);
-                    winText.setPosition(200, 250);
+                    winText.setPosition(200, 200);
                     window.draw(winText);
+
+                    if (characterCount > 1) {
+                        sf::Text p2WinText;
+                        p2WinText.setFont(font);
+                        p2WinText.setString("P2 Score: " + std::to_string(characters[1]->getScore()));
+                        p2WinText.setCharacterSize(50);
+                        p2WinText.setFillColor(sf::Color::Cyan);
+                        p2WinText.setPosition(200, 320);
+                        window.draw(p2WinText);
+                    }
+
                     window.display();
                     sf::sleep(sf::seconds(3));
                     window.close();
@@ -210,7 +274,8 @@ int main() {
                     spawnPlatforms(platforms, platformCount, currentLevel);
                     spawnEnemies(enemies, enemyCount, currentLevel);
                     background.loadLevel(currentLevel);
-                    characters[0]->reset();
+                    for (int i = 0; i < characterCount; i++)
+                        characters[i]->reset();
                 }
             }
             continue;
@@ -224,7 +289,6 @@ int main() {
                 break;
             }
 
-            // Also check Mogera's children
             Mogera* mogera = dynamic_cast<Mogera*>(enemies[i]);
             if (mogera) {
                 for (int c = 0; c < mogera->childCount; c++) {
@@ -237,26 +301,22 @@ int main() {
             }
         }
 
-        // Count active gems
-        Smash* playerSmash = dynamic_cast<Smash*>(characters[0]);
+        // Check active gems (shared between all players)
         int activeGemCount = 0;
-        if (playerSmash) {
-            for (int i = 0; i < playerSmash->gemCount; i++) {
-                if (playerSmash->gems[i]->isActive()) {
-                    activeGemCount++;
-                }
-            }
+        for (int i = 0; i < Smash::sharedGemCount; i++) {
+            if (Smash::sharedGems[i]->isActive())
+                activeGemCount++;
         }
 
-        // Level complete only if all enemies dead AND all gems collected
         if (allDead && activeGemCount == 0 && enemyCount > 0) {
             levelComplete = true;
             levelCompleteTimer = 120.f;
         }
 
-        // ---- UPDATE PLAYER ----
+        // ---- UPDATE PLAYERS ----
         for (int i = 0; i < characterCount; i++) {
-            characters[i]->Update(platforms, platformCount, enemies, enemyCount);
+            if (!characters[i]->isGameOver())
+                characters[i]->Update(platforms, platformCount, enemies, enemyCount);
         }
 
         // ---- UPDATE ENEMIES ----
@@ -271,26 +331,34 @@ int main() {
             if (mogera) {
                 mogera->Update(platforms, platformCount, playerCX, playerCY);
 
-                // Knife hits player
+                // Knife hits any player
                 if (mogera->knifeActive) {
                     sf::FloatRect k = mogera->getKnifeRect();
-                    bool ox = k.left < playerRect.left + playerRect.width && k.left + k.width > playerRect.left;
-                    bool oy = k.top < playerRect.top + playerRect.height && k.top + k.height > playerRect.top;
-                    if (ox && oy) {
-                        mogera->deactivateKnife();
-                        characters[0]->hit();
+                    for (int p = 0; p < characterCount; p++) {
+                        sf::FloatRect pRect = characters[p]->getRect();
+                        bool ox = k.left < pRect.left + pRect.width && k.left + k.width > pRect.left;
+                        bool oy = k.top < pRect.top + pRect.height && k.top + k.height > pRect.top;
+                        if (ox && oy) {
+                            mogera->deactivateKnife();
+                            characters[p]->hit();
+                            break;
+                        }
                     }
                 }
 
-                // Children hit player
+                // Children hit any player
                 for (int c = 0; c < mogera->childCount; c++) {
                     if (mogera->children[c]->isDead()) continue;
                     sf::FloatRect cRect = mogera->children[c]->getRect();
-                    bool ox = cRect.left < playerRect.left + playerRect.width && cRect.left + cRect.width > playerRect.left;
-                    bool oy = cRect.top < playerRect.top + playerRect.height && cRect.top + cRect.height > playerRect.top;
-                    if (ox && oy) {
-                        characters[0]->hit();
-                        mogera->children[c]->kill();
+                    for (int p = 0; p < characterCount; p++) {
+                        sf::FloatRect pRect = characters[p]->getRect();
+                        bool ox = cRect.left < pRect.left + pRect.width && cRect.left + cRect.width > pRect.left;
+                        bool oy = cRect.top < pRect.top + pRect.height && cRect.top + cRect.height > pRect.top;
+                        if (ox && oy) {
+                            characters[p]->hit();
+                            mogera->children[c]->kill();
+                            break;
+                        }
                     }
                 }
                 continue;
@@ -303,11 +371,15 @@ int main() {
 
                 if (tornado->knifeActive) {
                     sf::FloatRect k = tornado->getKnifeRect();
-                    bool ox = k.left < playerRect.left + playerRect.width && k.left + k.width > playerRect.left;
-                    bool oy = k.top < playerRect.top + playerRect.height && k.top + k.height > playerRect.top;
-                    if (ox && oy) {
-                        tornado->knifeActive = false;
-                        characters[0]->hit();
+                    for (int p = 0; p < characterCount; p++) {
+                        sf::FloatRect pRect = characters[p]->getRect();
+                        bool ox = k.left < pRect.left + pRect.width && k.left + k.width > pRect.left;
+                        bool oy = k.top < pRect.top + pRect.height && k.top + k.height > pRect.top;
+                        if (ox && oy) {
+                            tornado->knifeActive = false;
+                            characters[p]->hit();
+                            break;
+                        }
                     }
                 }
                 continue;
@@ -331,37 +403,66 @@ int main() {
             characters[i]->Draw(window, showHitboxes);
 
         // ---- HUD ----
+        // P1 top left
         sf::Text livesText;
         livesText.setFont(font);
-        livesText.setString("Lives: " + std::to_string(characters[0]->getLives()));
-        livesText.setCharacterSize(30);
+        livesText.setString("P1 Lives: " + std::to_string(characters[0]->getLives()));
+        livesText.setCharacterSize(25);
         livesText.setFillColor(sf::Color::White);
         livesText.setPosition(10, 10);
         window.draw(livesText);
 
         sf::Text scoreText;
         scoreText.setFont(font);
-        scoreText.setString("Score: " + std::to_string(characters[0]->getScore()));
-        scoreText.setCharacterSize(30);
+        scoreText.setString("P1 Score: " + std::to_string(characters[0]->getScore()));
+        scoreText.setCharacterSize(25);
         scoreText.setFillColor(sf::Color::White);
-        scoreText.setPosition(10, 50);
+        scoreText.setPosition(10, 40);
         window.draw(scoreText);
-
-        sf::Text levelText;
-        levelText.setFont(font);
-        levelText.setString("Level: " + std::to_string(currentLevel));
-        levelText.setCharacterSize(30);
-        levelText.setFillColor(sf::Color::White);
-        levelText.setPosition(350, 10);
-        window.draw(levelText);
 
         sf::Text gemsText;
         gemsText.setFont(font);
-        gemsText.setString("Gems: " + std::to_string(dynamic_cast<Smash*>(characters[0])->getGems()));
-        gemsText.setCharacterSize(30);
+        gemsText.setString("P1 Gems: " + std::to_string(dynamic_cast<Smash*>(characters[0])->getGems()));
+        gemsText.setCharacterSize(25);
         gemsText.setFillColor(sf::Color(255, 215, 0));
-        gemsText.setPosition(350, 50);
+        gemsText.setPosition(10, 70);
         window.draw(gemsText);
+
+        // P2 top right
+        if (characterCount > 1) {
+            sf::Text lives2Text;
+            lives2Text.setFont(font);
+            lives2Text.setString("P2 Lives: " + std::to_string(characters[1]->getLives()));
+            lives2Text.setCharacterSize(25);
+            lives2Text.setFillColor(sf::Color::Cyan);
+            lives2Text.setPosition(590, 10);
+            window.draw(lives2Text);
+
+            sf::Text score2Text;
+            score2Text.setFont(font);
+            score2Text.setString("P2 Score: " + std::to_string(characters[1]->getScore()));
+            score2Text.setCharacterSize(25);
+            score2Text.setFillColor(sf::Color::Cyan);
+            score2Text.setPosition(590, 40);
+            window.draw(score2Text);
+
+            sf::Text gems2Text;
+            gems2Text.setFont(font);
+            gems2Text.setString("P2 Gems: " + std::to_string(dynamic_cast<Smash*>(characters[1])->getGems()));
+            gems2Text.setCharacterSize(25);
+            gems2Text.setFillColor(sf::Color(255, 215, 0));
+            gems2Text.setPosition(590, 70);
+            window.draw(gems2Text);
+        }
+
+        // Level top center
+        sf::Text levelText;
+        levelText.setFont(font);
+        levelText.setString("Level: " + std::to_string(currentLevel));
+        levelText.setCharacterSize(25);
+        levelText.setFillColor(sf::Color::White);
+        levelText.setPosition(350, 10);
+        window.draw(levelText);
 
         window.display();
     }

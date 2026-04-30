@@ -12,8 +12,11 @@ public:
     int getValue() const { return value; }
     void collect() { active = false; }
 
+    void setVelocity(float vx, float vy) { velocityX = vx; velocityY = vy; }
+
 private:
     sf::FloatRect rect;
+    float velocityX;
     float velocityY;
     bool active;
     int value;
