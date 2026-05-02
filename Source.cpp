@@ -15,6 +15,7 @@
 #include"leaderboard.h"
 #include"store.h"
 #include"instructions.h"
+#include"LevelSelectionScreen.h"
 #include <cstdlib>
 #include <ctime>
 #include <string>
@@ -120,7 +121,14 @@ int main() {
 
     // ---- INSTRUCTIONS ----
     bool proceed = instructions.run(leaderboard, loginScreen, auth);
+    cout << "proceed = " << proceed << endl;
     if (!proceed) return 0;
+
+
+    //level selection:::
+    LevelSelection levelSelect(window);
+    int selectedLevel = levelSelect.run();
+    if (selectedLevel == 0) return 0;
 
 
     // ---- 1P/2P SCREEN ----
@@ -169,7 +177,9 @@ int main() {
     if (numPlayers == 2)
         characters[characterCount++] = new Smash(2);
 
-    int currentLevel = 1;
+    int currentLevel = selectedLevel;  // was = 1 before
+
+
 
     Platform* platforms[15] = { nullptr };
     int platformCount = 0;
