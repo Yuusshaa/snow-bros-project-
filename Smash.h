@@ -18,6 +18,35 @@ public:
     void hit() override;
     sf::FloatRect getRect() override { return rect; }
 
+
+    void spendGems(int amount) { gemCurrency -= amount; }
+    void addLife() { lives++; }
+
+
+    void activateSpeedBoost(int seconds)
+    {
+        spendGems(20);
+        speedBoostTimer = seconds * 60.f;  // convert seconds to frames
+    }
+
+    void activateDistanceBoost()
+    {
+        spendGems(25);
+        distanceBoostActive = true;  // checked in Snowball spawn — snowball travels full width
+    }
+
+    void activatePowerSnow()
+    {
+        spendGems(30);
+        powerSnowActive = true;  // checked in hitWithSnow — encases in 1 hit
+    }
+
+    void activateBalloonMode(int seconds)
+    {
+        spendGems(35);
+        balloonTimer = seconds * 60.f;  // floats upward, can't be hurt by ground enemies
+    }
+
     Snowball* snowballs[100000] = { nullptr };
     int snowballCount = 0;
 
@@ -38,6 +67,11 @@ private:
     float invincibleTimer;
     bool shootHeld;
     int playerNum; // 1 or 2
+
+    float speedBoostTimer;
+    float balloonTimer;
+    bool distanceBoostActive;
+    bool powerSnowActive;
 
     // Controls
     sf::Keyboard::Key moveLeft;

@@ -12,6 +12,9 @@
 #include "Gem.h"
 #include "1P2PScreen.h"
 #include "backgrounds.h"
+#include"leaderboard.h"
+#include"store.h"
+#include"instructions.h"
 #include <cstdlib>
 #include <ctime>
 #include <string>
@@ -99,7 +102,6 @@ void spawnEnemies(Enemy** enemies, int& enemyCount, int level) {
 
 int main() {
     Botom::loadTexture();
-    FlyingFoogaFoog::loadFlyTexture();
     srand((unsigned int)time(0));
 
     sf::RenderWindow window(sf::VideoMode(800, 600), "Snow Bros");
@@ -108,41 +110,56 @@ int main() {
     sf::Font font;
     font.loadFromFile("Silkscreen-Regular.ttf");
 
+    Leaderboard leaderboard(window, "leaderboard.txt");
+    Instructions instructions(window);
+
+    // ---- SPLASH ----
+    Login auth("users.txt");
+    LoginScreen loginScreen(window, auth);
+    loginScreen.showSplash();
+
+    // ---- INSTRUCTIONS ----
+    bool proceed = instructions.run(leaderboard, loginScreen, auth);
+    if (!proceed) return 0;
+
+
     // ---- 1P/2P SCREEN ----
     PlayerScreen playerScreen(window);
     int numPlayers = playerScreen.run();
     if (numPlayers == 0) return 0;
 
-    // ---- LOGIN ----
-    Login auth("users.txt");
-    LoginScreen loginScreen(window, auth);
 
-    loginScreen.showSplash();
 
     // Player 1 login
-    sf::Text loginTitle;
-    loginTitle.setFont(font);
-    loginTitle.setCharacterSize(40);
-    loginTitle.setFillColor(sf::Color::White);
-    loginTitle.setPosition(200, 50);
-    loginTitle.setString("PLAYER 1 - LOGIN");
-    window.clear(sf::Color::Black);
-    window.draw(loginTitle);
-    window.display();
-
+    loginScreen.setTitle("1ST PLAYER LOGIN");
     bool loggedIn1 = loginScreen.run();
     if (!loggedIn1) return 0;
 
-    // Player 2 login if 2 player mode
-    if (numPlayers == 2) {
-        loginScreen.clearInputs();  // Clear inputs for Player 2
-        loginTitle.setString("PLAYER 2 - LOGIN");
-        window.clear(sf::Color::Black);
-        window.draw(loginTitle);
-        window.display();
+    string player1Username = auth.getCurrentLoggedInUser();  // save p1 username
 
-        bool loggedIn2 = loginScreen.run();
-        if (!loggedIn2) return 0;
+    // Player 2 login
+    if (numPlayers == 2)
+    {
+        loginScreen.clearInputs();
+        loginScreen.setTitle("2ND PLAYER LOGIN");
+
+        // keep asking until they use a different account
+        while (true)
+        {
+            bool loggedIn2 = loginScreen.run();
+            if (!loggedIn2) return 0;
+
+            if (auth.getCurrentLoggedInUser() == player1Username)
+            {
+                // same account — show error and make them try again
+                loginScreen.clearInputs();
+                loginScreen.setStatusMessage("Same account as P1! Use a different account.");
+            }
+            else
+            {
+                break;  // different account, good to go
+            }
+        }
     }
 
     // ---- SETUP ----
@@ -152,7 +169,7 @@ int main() {
     if (numPlayers == 2)
         characters[characterCount++] = new Smash(2);
 
-    int currentLevel = 5;
+    int currentLevel = 1;
 
     Platform* platforms[15] = { nullptr };
     int platformCount = 0;
@@ -203,6 +220,7 @@ int main() {
             gameOverText.setFillColor(sf::Color::Red);
             gameOverText.setPosition(200, 200);
             window.draw(gameOverText);
+            leaderboard.saveScore(auth.getCurrentLoggedInUser(), characters[0]->getScore(), currentLevel);
 
             if (characterCount > 1) {
                 sf::Text p2ScoreText;
@@ -254,6 +272,7 @@ int main() {
                     winText.setFillColor(sf::Color::Yellow);
                     winText.setPosition(200, 200);
                     window.draw(winText);
+                    leaderboard.saveScore(auth.getCurrentLoggedInUser(), characters[0]->getScore(), currentLevel);
 
                     if (characterCount > 1) {
                         sf::Text p2WinText;

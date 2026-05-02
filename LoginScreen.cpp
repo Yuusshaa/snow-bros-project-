@@ -32,10 +32,10 @@ LoginScreen::LoginScreen(sf::RenderWindow& window, Login& auth) : window(window)
     registerButton.setPosition(420, 400);
     registerButton.setFillColor(sf::Color(41, 7, 21));  // green
 
-   //removed title text
+    //removed title text
 
 
-    backgroundTexture.loadFromFile("loginbackground.png");  
+    backgroundTexture.loadFromFile("loginbackground.png");
     backgroundSprite.setTexture(backgroundTexture);
 
     // if image isn't exactly 800x600, this scales it to fit the window
@@ -85,7 +85,7 @@ LoginScreen::LoginScreen(sf::RenderWindow& window, Login& auth) : window(window)
     statusText.setFont(font);
     statusText.setCharacterSize(20);
     statusText.setFillColor(sf::Color::Red);
-    statusText.setPosition(250, 460);
+    statusText.setPosition(160, 490);
 }
 
 
@@ -93,7 +93,7 @@ LoginScreen::LoginScreen(sf::RenderWindow& window, Login& auth) : window(window)
 void LoginScreen::showSplash()
 {
     sf::Texture splashTexture;
-    splashTexture.loadFromFile("splash.png");  
+    splashTexture.loadFromFile("splash.png");
     sf::Sprite splashSprite;
     splashSprite.setTexture(splashTexture);
     splashSprite.setScale
@@ -123,7 +123,7 @@ void LoginScreen::showSplash()
         if (elapsedTime > 4.f)
             alpha = 255.f * (1.f - (elapsedTime - 4.f));  // goes from 255 to 0 over 1 second
 
-        if (elapsedTime >= 5.f) 
+        if (elapsedTime >= 5.f)
             return;  // done, go to login
 
         splashSprite.setColor(sf::Color(255, 255, 255, (sf::Uint8)alpha));
@@ -243,6 +243,8 @@ bool LoginScreen::run()
         window.draw(backgroundSprite);  // draw background 
 
 
+        window.draw(titleText);  // draw it before boxes
+
         window.draw(usernameLabel);
         window.draw(passwordLabel);
         window.draw(usernameBox);
@@ -254,6 +256,8 @@ bool LoginScreen::run()
         window.draw(loginLabel);
         window.draw(registerLabel);
         window.draw(statusText);
+
+
 
         window.display();
     }
@@ -267,5 +271,20 @@ void LoginScreen::clearInputs() {
     usernameActive = true;
     usernameBox.setOutlineColor(sf::Color::Blue);
     passwordBox.setOutlineColor(sf::Color::White);
+    statusText.setFillColor(sf::Color::Red);
+}
+
+void LoginScreen::setTitle(string title)
+{
+    titleText.setFont(font);
+    titleText.setString(title);
+    titleText.setCharacterSize(30);
+    titleText.setFillColor(sf::Color::Yellow);
+    titleText.setPosition(225, 450);  // sits above the username box
+}
+
+void LoginScreen::setStatusMessage(string msg)
+{
+    statusMessage = msg;
     statusText.setFillColor(sf::Color::Red);
 }

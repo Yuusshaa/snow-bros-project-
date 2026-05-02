@@ -21,6 +21,11 @@ void Smash::clearGems() {
 Smash::Smash(int playerNumber) {
     playerNum = playerNumber;
 
+    speedBoostTimer = 0.f;
+    balloonTimer = 0.f;
+    distanceBoostActive = false;
+    powerSnowActive = false;
+
     // Player 1 starts left, Player 2 starts right
     if (playerNum == 1) {
         rect = sf::FloatRect(200, 400, 60, 80);
@@ -124,7 +129,15 @@ void Smash::checkSnowballEnemyCollision(Enemy** enemies, int enemyCount) {
 
             if (enemies[e]->isRolling()) continue;
 
-            enemies[e]->hitWithSnow();
+            if (powerSnowActive)
+            {
+                enemies[e]->hitWithSnow();
+                enemies[e]->hitWithSnow();  // second hit instantly encases
+            }
+            else
+                enemies[e]->hitWithSnow();
+
+
             if (enemies[e]->isEncased()) score += 100;
             snowballs[s]->deactivate();
         }
@@ -132,9 +145,16 @@ void Smash::checkSnowballEnemyCollision(Enemy** enemies, int enemyCount) {
 }
 
 void Smash::Update(Platform** platforms, int platformCount, Enemy** enemies, int enemyCount) {
-    float speed = 5.0f;
+    float speed = (speedBoostTimer > 0) ? 7.5f : 5.0f;  // 50% faster during boost
     float gravity = 0.6f;
     float jumpForce = -14.f;
+
+    if (speedBoostTimer > 0) speedBoostTimer--;
+    if (balloonTimer > 0)
+    {
+        balloonTimer--;
+        velocityY = -1.5f;  // gentle upward float
+    }
 
     if (invincibleTimer > 0) invincibleTimer--;
 

@@ -34,10 +34,14 @@ private:
     sf::Text registerLabel;
     sf::Text statusText;
 
+
 public:
     LoginScreen(sf::RenderWindow& window, Login& auth);
     void showSplash();
-    bool run();  
+    bool run();
     //game runs when logjin is successful
     void clearInputs();
+    void setTitle(string title);
+
+    void setStatusMessage(string msg);
 };
