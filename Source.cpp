@@ -16,6 +16,7 @@
 #include"store.h"
 #include"instructions.h"
 #include"LevelSelectionScreen.h"
+#include"Pause.h"
 #include <cstdlib>
 #include <ctime>
 #include <string>
@@ -66,6 +67,43 @@ void spawnPlatforms(Platform** platforms, int& platformCount, int level) {
         platforms[platformCount++] = new Platform(400, 400, 300, 15);
         platforms[platformCount++] = new Platform(500, 500, 300, 15);
     }
+
+    else if (level == 6) {
+        platforms[platformCount++] = new Platform(50, 130, 180, 15);  
+        platforms[platformCount++] = new Platform(225, 215, 175, 15);   
+        platforms[platformCount++] = new Platform(400, 270, 180, 15);   
+        platforms[platformCount++] = new Platform(50, 450, 260, 15);   
+        platforms[platformCount++] = new Platform(450, 450, 260, 15);  
+        platforms[platformCount++] = new Platform(50, 375, 260, 15);    
+        platforms[platformCount++] = new Platform(450, 375, 260, 15);  
+    }
+
+    else if (level == 7) {
+        platforms[platformCount++] = new Platform(80, 180, 230, 20);  
+        platforms[platformCount++] = new Platform(440, 180, 230, 20);  
+        platforms[platformCount++] = new Platform(110, 330, 160, 20);  
+        platforms[platformCount++] = new Platform(530, 330, 130, 20);  
+        platforms[platformCount++] = new Platform(140, 480, 460, 20); 
+    }
+
+    else if (level == 8) {
+        platforms[platformCount++] = new Platform(50, 150, 120, 20);   
+        platforms[platformCount++] = new Platform(140, 250, 120, 20);
+        platforms[platformCount++] = new Platform(240, 350, 120, 20); 
+        platforms[platformCount++] = new Platform(50, 450, 120, 20);   
+        platforms[platformCount++] = new Platform(470, 200, 120, 20); 
+        platforms[platformCount++] = new Platform(570, 280, 120, 20);  
+        platforms[platformCount++] = new Platform(620, 430, 120, 20);
+    }
+
+    else if (level == 9) {
+        platforms[platformCount++] = new Platform(350, 150, 100, 20);
+        platforms[platformCount++] = new Platform(200, 280, 100, 20);
+        platforms[platformCount++] = new Platform(500, 280, 100, 20);
+        platforms[platformCount++] = new Platform(350, 410, 100, 20);
+        platforms[platformCount++] = new Platform(170, 520, 100, 20);
+        platforms[platformCount++] = new Platform(530, 520, 100, 20);
+    }
 }
 
 void spawnEnemies(Enemy** enemies, int& enemyCount, int level) {
@@ -99,6 +137,39 @@ void spawnEnemies(Enemy** enemies, int& enemyCount, int level) {
     else if (level == 5) {
         enemies[enemyCount++] = new Mogera(20, 320);
     }
+
+    else if (level == 6)
+    {
+        enemies[enemyCount++] = new Mogera(20, 320);
+        enemies[enemyCount++] = new Tornado(499, 120);
+    }
+
+    else if (level == 7)
+    {
+        enemies[enemyCount++] = new Mogera(20, 320);
+        enemies[enemyCount++] = new Tornado(499, 120);
+		enemies[enemyCount++] = new FlyingFoogaFoog(600, 100);
+    }
+
+    else if (level == 8)
+    {
+        enemies[enemyCount++] = new Mogera(20, 320);
+		enemies[enemyCount++] = new Tornado(499, 120);
+        enemies[enemyCount++] = new Tornado(499, 120);
+        enemies[enemyCount++] = new Botom(200, 100);
+    }
+
+    else if (level == 9)
+    {
+        enemies[enemyCount++] = new Mogera(20, 320);
+        enemies[enemyCount++] = new Tornado(499, 120);
+        enemies[enemyCount++] = new FlyingFoogaFoog(600, 100);
+        enemies[enemyCount++] = new Botom(200, 100);
+        enemies[enemyCount++] = new Botom(200, 100);
+        enemies[enemyCount++] = new Tornado(499, 120);
+        enemies[enemyCount++] = new FlyingFoogaFoog(600, 100);
+
+    }
 }
 
 int main() {
@@ -110,6 +181,19 @@ int main() {
 
     sf::Font font;
     font.loadFromFile("Silkscreen-Regular.ttf");
+
+    PauseMenu pauseMenu(window);
+    Store store(window);
+
+    // pause button on screen (pause.png)
+    sf::Texture pauseTexture;
+    pauseTexture.loadFromFile("pause.png");
+    sf::Sprite pauseSprite;
+    pauseSprite.setTexture(pauseTexture);
+    pauseSprite.setScale(40.f / pauseTexture.getSize().x, 40.f / pauseTexture.getSize().y);
+    pauseSprite.setPosition(750, 90);  // top right corner
+
+    bool paused = false;
 
     Leaderboard leaderboard(window, "leaderboard.txt");
     Instructions instructions(window);
@@ -210,6 +294,31 @@ int main() {
                 window.close();
             if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::H)
                 showHitboxes = !showHitboxes;
+            if (event.type == sf::Event::MouseButtonPressed)
+            {
+                sf::Vector2f mouse(event.mouseButton.x, event.mouseButton.y);
+                if (pauseSprite.getGlobalBounds().contains(mouse))
+                    paused = true;
+            }
+        }
+
+        if (paused)
+        {
+            int choice = pauseMenu.run();
+            if (choice == 1)
+                paused = false;  // resume
+            else if (choice == 2)
+            {
+                Smash* player = (Smash*)characters[0];
+                store.run(*player);
+                paused = true;  // go back to pause after store
+            }
+            else if (choice == 3)
+            {
+                window.close();
+                break;
+            }
+            continue;
         }
 
         // ---- GAME OVER ----
@@ -492,6 +601,7 @@ int main() {
         levelText.setFillColor(sf::Color::White);
         levelText.setPosition(350, 10);
         window.draw(levelText);
+        window.draw(pauseSprite);
 
         window.display();
     }
