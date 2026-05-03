@@ -201,6 +201,8 @@ int main() {
     // ---- SPLASH ----
     Login auth("users.txt");
     LoginScreen loginScreen(window, auth);
+
+    while (true){
     loginScreen.showSplash();
 
     // ---- INSTRUCTIONS ----
@@ -272,7 +274,9 @@ int main() {
     Enemy* enemies[20] = { nullptr };
     int enemyCount = 0;
 
-    int maxLevels = 5;
+    int maxLevels = 11;
+    bool scoreSaved = false;  
+    bool restartGame = false; ;
     bool levelComplete = false;
     float levelCompleteTimer = 1.0f;
 
@@ -334,10 +338,10 @@ int main() {
             window.clear(sf::Color::Black);
             sf::Text gameOverText;
             gameOverText.setFont(font);
-            gameOverText.setString("GAME OVER\nP1 Score: " + std::to_string(characters[0]->getScore()));
+            gameOverText.setString("GAME OVER\nP1 Score: " + std::to_string(characters[0]->getScore()) + "\nPress R to restart");
             gameOverText.setCharacterSize(50);
             gameOverText.setFillColor(sf::Color::Red);
-            gameOverText.setPosition(200, 200);
+            gameOverText.setPosition(125,200);
             window.draw(gameOverText);
             leaderboard.saveScore(auth.getCurrentLoggedInUser(), characters[0]->getScore(), currentLevel);
 
@@ -351,7 +355,22 @@ int main() {
                 window.draw(p2ScoreText);
             }
 
+
+
             window.display();
+            sf::Event e;
+            while (window.pollEvent(e))
+            {
+                if (e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::R)
+                {
+                    restartGame = true;
+                    break;
+                }
+                if (e.type == sf::Event::Closed)
+                    window.close();
+            }
+            if (restartGame) break;
+  
             continue;
         }
 
@@ -391,7 +410,11 @@ int main() {
                     winText.setFillColor(sf::Color::Yellow);
                     winText.setPosition(200, 200);
                     window.draw(winText);
-                    leaderboard.saveScore(auth.getCurrentLoggedInUser(), characters[0]->getScore(), currentLevel);
+                    if (!scoreSaved)
+                    {
+                        leaderboard.saveScore(auth.getCurrentLoggedInUser(), characters[0]->getScore(), currentLevel);
+                        scoreSaved = true;
+                    }
 
                     if (characterCount > 1) {
                         sf::Text p2WinText;
@@ -609,4 +632,8 @@ int main() {
     for (int i = 0; i < characterCount; i++) delete characters[i];
     for (int i = 0; i < platformCount; i++) delete platforms[i];
     for (int i = 0; i < enemyCount; i++) delete enemies[i];
+
+    if (!window.isOpen()) break; 
+
+}
 }
