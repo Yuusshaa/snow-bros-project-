@@ -60,6 +60,7 @@ virtual void hitWithSnow() {
         rollingRight = goRight;
     }
     bool scoreCounted = false;
+    bool droppedPowerup = false;
 
 protected:
     sf::FloatRect rect;

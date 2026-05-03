@@ -1,9 +1,12 @@
-// Animation.h
 #pragma once
 #include <SFML/Graphics.hpp>
 
 class Animation {
+
 public:
+    Animation() : startX(0), startY(0), frameWidth(1), frameHeight(1), 
+                  frameCount(1), speed(0), currentFrame(0), timer(0) {}
+
     Animation(sf::Texture& texture, int startX, int startY,
         int fWidth, int fHeight, int fCount, float spd) {
         sprite.setTexture(texture);
@@ -20,13 +23,20 @@ public:
         float scaleX = targetWidth / frameWidth;
         float scaleY = targetHeight / frameHeight;
 
+        sprite.setTextureRect(sf::IntRect(
+            startX + currentFrame * frameWidth,
+            startY,
+            frameWidth,
+            frameHeight
+        ));
+
         if (isFlipped) {
             sprite.setScale(-scaleX, scaleY);          // negative = flip left
-            sprite.setOrigin((float)frameWidth, 0.f);  // origin at right edge
+            sprite.setOrigin((float)frameWidth, 0.f); 
         }
         else {
-            sprite.setScale(scaleX, scaleY);           // normal
-            sprite.setOrigin(0.f, 0.f);                // origin at left edge
+            sprite.setScale(scaleX, scaleY);          
+            sprite.setOrigin(0.f, 0.f);                
         }
 
         sprite.setPosition(x, y);
@@ -51,6 +61,32 @@ public:
 
     void flipX(bool flipped) {
         isFlipped = flipped;
+    }
+
+    Animation& operator=(const Animation& other) {
+        startX       = other.startX;
+        startY       = other.startY;
+        frameWidth   = other.frameWidth;
+        frameHeight  = other.frameHeight;
+        frameCount   = other.frameCount;
+        speed        = other.speed;
+        currentFrame = other.currentFrame;
+        timer        = other.timer;
+        isFlipped    = other.isFlipped;
+
+        // Re-bind texture pointer so it doesn't go stale
+        sprite.setTexture(*other.sprite.getTexture());
+        sprite.setTextureRect(other.sprite.getTextureRect());
+        return *this;
+    }
+
+    sf::IntRect getCurrentFrame() const {
+        return sf::IntRect(
+            startX + currentFrame * frameWidth,
+            startY,
+            frameWidth,
+            frameHeight
+        );
     }
 
     void reset() { currentFrame = 0; timer = 0; }

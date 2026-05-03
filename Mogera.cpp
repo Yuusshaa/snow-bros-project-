@@ -2,6 +2,15 @@
 #include <cstdlib>
 #include <cmath>
 
+sf::Texture Mogera::mTexture;
+sf::Texture Mogera::playerTexture;
+
+bool Mogera::loadTexture() {
+    bool a = mTexture.loadFromFile("Mogera.png");
+    bool b = playerTexture.loadFromFile("Player_Blue.png");
+    return a && b;
+}
+
 Mogera::Mogera(float x, float y) {
     rect = sf::FloatRect(x, y, 150, 175);
     velocityY = 0.f;
@@ -15,6 +24,23 @@ Mogera::Mogera(float x, float y) {
     knifeTimer = 180.f;
     knifeSpeedX = 0.f;
     knifeSpeedY = 0.f;
+
+    // Setup body sprite (Position: 36,4 Size: 549x478) - flipped to face left
+    bodySprite.setTexture(mTexture);
+    bodySprite.setTextureRect(sf::IntRect(36, 4, 549, 478));
+    bodySprite.setScale(-rect.width / 549.f, (rect.height * 0.6f) / 478.f);
+    bodySprite.setOrigin(0, 0);
+
+    // Setup legs sprite (Position: 1973,0 Size: 489x139) - flipped to face left
+    legsSprite.setTexture(mTexture);
+    legsSprite.setTextureRect(sf::IntRect(1973, 0, 489, 139));
+    legsSprite.setScale(-rect.width / 489.f, (rect.height * 0.4f) / 139.f);
+    legsSprite.setOrigin(0, 0);
+
+    // Setup animations from Player_Blue (roll at 5,968 size 81x84, hit at 92,900 size 68x60)
+    rollAnim = Animation(playerTexture, 5, 968, 81, 84, 3, 10.f);
+    hitAnim = Animation(playerTexture, 92, 900, 68, 60, 1, 0.f);
+    currentAnim = nullptr;
 }
 
 void Mogera::checkPlatformCollision(sf::FloatRect p) {
@@ -40,6 +66,7 @@ void Mogera::spawnChildren() {
         if (child->velocityX < 0) child->velocityX = -child->velocityX;
         children[childCount++] = child;
     }
+    SoundManager::get().playMogeraChild();
 }
 
 void Mogera::throwKnife(float playerX, float playerY) {
@@ -59,6 +86,14 @@ void Mogera::throwKnife(float playerX, float playerY) {
 
 void Mogera::Update(Platform** platforms, int platformCount, float playerX, float playerY) {
     if (dead) return;
+
+    // Update animations
+    if (isRolling()) {
+        rollAnim.update();
+    }
+    else if (isEncased()) {
+        hitAnim.update();
+    }
 
     for (int i = 0; i < childCount; i++) {
         if (!children[i]->isDead())
@@ -136,10 +171,22 @@ void Mogera::Draw(sf::RenderWindow& window, bool showHitbox) {
         window.draw(knife);
     }
 
-    sf::RectangleShape shape(sf::Vector2f(rect.width, rect.height));
-    shape.setPosition(rect.left, rect.top);
-    shape.setFillColor(sf::Color(0, 100, 0));
-    window.draw(shape);
+    // Draw animations if rolling or frozen, otherwise draw normal sprites
+    if (isRolling()) {
+        rollAnim.draw(window, rect.left, rect.top, rect.width, rect.height);
+    }
+    else if (isEncased()) {
+        hitAnim.draw(window, rect.left, rect.top, rect.width, rect.height);
+    }
+    else {
+        // Draw body (top 60%)
+        bodySprite.setPosition(rect.left + rect.width, rect.top);
+        window.draw(bodySprite);
+
+        // Draw legs (bottom 40%) - no gap
+        legsSprite.setPosition(rect.left + rect.width, rect.top + rect.height * 0.6f);
+        window.draw(legsSprite);
+    }
 
     sf::RectangleShape healthBg(sf::Vector2f(150, 20));
     healthBg.setPosition(rect.left, rect.top - 25);

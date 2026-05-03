@@ -2,22 +2,26 @@
 #include <SFML/Graphics.hpp>
 #include "Platform.h"
 
-class Snowball {
+class Rocket {
 public:
-    Snowball(float initialX, float initialY, bool goingRight);
+    Rocket(float x, float y, float dirX, float dirY, float speed);
     void Update(Platform** platforms, int platformCount);
     void Draw(sf::RenderWindow& window, bool showHitbox);
+
     sf::FloatRect getRect() { return rect; }
     bool isActive() { return active; }
-    void deactivate() { active = false; }
-    void setMaxDistance(float d) { maxDistance = d; }
+    bool hasExploded() { return exploding; }
+    sf::FloatRect getExplosionRect() { return explosionRect; }
+    void deactivate() { active = false; exploding = false; }
 
 private:
     sf::FloatRect rect;
+    sf::FloatRect explosionRect;
     float speedX;
     float speedY;
-    float distanceTravelled;
-    float maxDistance;
-    bool goingRight;
     bool active;
+    bool exploding;
+    float explosionTimer;
+
+    void explode();
 };

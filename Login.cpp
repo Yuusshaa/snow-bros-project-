@@ -17,7 +17,7 @@ bool Login::registerUser(string username, string password)
     string line;
     while (getline(readFile, line))
     {
-        string storedUsername = line.substr(line.find(',') + 1);
+        string storedUsername = line.substr(line.find(',') + 1);  
         storedUsername = storedUsername.substr(0, storedUsername.find(','));
         if (storedUsername == username)
         {
@@ -69,7 +69,7 @@ int Login::getNextUserID()
     ifstream readFile(filename);
     string line;
     int lineCount = 0;
-    while (getline(readFile, line))
+    while (getline(readFile, line)) 
         lineCount++;
     readFile.close();
     return lineCount + 1;
@@ -97,4 +97,5 @@ string Login::getTimestamp()
         + to_string(ltm->tm_mday);
     return date;
 }
+
 

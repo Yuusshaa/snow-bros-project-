@@ -2,6 +2,12 @@
 #include <cmath>
 #include <cstdlib>
 
+sf::Texture Tornado::tTexture;
+
+bool Tornado::loadTexture() {
+    return tTexture.loadFromFile("Tornado_Blue.png");
+}
+
 Tornado::Tornado(float initialX, float initialY) : FlyingFoogaFoog(initialX, initialY) {
     knifeTimer = 180.f;
     teleportTimer = 120.f + rand() % 120;
@@ -9,6 +15,15 @@ Tornado::Tornado(float initialX, float initialY) : FlyingFoogaFoog(initialX, ini
     knifeSpeedX = 0.f;
     knifeSpeedY = 0.f;
 
+    // Setup sprite
+    tSprite.setTexture(tTexture);
+    tSprite.setTextureRect(sf::IntRect(0, 36, 129, 124));
+    tSprite.setScale(rect.width / 129.f, rect.height / 124.f);
+
+    // Override inherited animations with Player_Blue snowball animations
+    fullAnim = Animation(Botom::snowballtexture, 5, 968, 81, 84, 1, 0.f);
+    halfAnim = Animation(Botom::snowballtexture, 91, 900, 68, 60, 1, 0.f);
+    rollAnim = Animation(Botom::snowballtexture, 5, 968, 81, 84, 3, 10.f);
 }
 
 void Tornado::throwKnife(float playerX, float playerY) {
@@ -24,93 +39,86 @@ void Tornado::throwKnife(float playerX, float playerY) {
 }
 
 void Tornado::Update(Platform** platforms, int platformCount, float playerX, float playerY) {
-    if (dead) 
-        return;
+    if (dead) return;
+
     updateDefrost();
 
+    // Rolling handled first
     if (rolling) {
-        currentAnim = &rollAnim;
-        currentAnim->update();
-
         rect.left += (rollingRight ? 6.f : -6.f);
         velocityY += 0.6f;
         rect.top += velocityY;
 
-        if (rect.left <= 0)
-            rect.left = 0, rollingRight = true;
-        if (rect.left + rect.width >= 800)
-            rect.left = 800 - rect.width, rollingRight = false;
-
-        for (int i = 1; i < platformCount; i++)
-            checkPlatformCollision(platforms[i]->getRect());
+        if (rect.left <= 0) rect.left = 0, rollingRight = true;
+        if (rect.left + rect.width >= 800) rect.left = 800 - rect.width, rollingRight = false;
 
         if (rect.top + rect.height >= 560) {
-            rect.top = 560 - rect.height;
-            velocityY = 0.f;
+            dead = true;
+            return;
         }
 
-        // corner kill zones
-        if (rect.left <= 0 && rect.top + rect.height >= 550 && rect.top + rect.height <= 610) {
-            dead = true; return;
-        }
-        if (rect.left + rect.width >= 800 && rect.top + rect.height >= 550 && rect.top + rect.height <= 610) {
-            dead = true; return;
-        }
+        for (int i = 0; i < platformCount; i++)
+            checkPlatformCollision(platforms[i]->getRect());
         return;
     }
-    if (isHalfFrozen()) {  // ADD THIS
+
+    // Encased — just gravity no teleport
+    if (isEncased()) {
         velocityY += 0.6f;
         rect.top += velocityY;
         for (int i = 0; i < platformCount; i++)
             checkPlatformCollision(platforms[i]->getRect());
         return;
     }
+
     // Update knife
     if (knifeActive) {
         knifeRect.left += knifeSpeedX;
         knifeRect.top += knifeSpeedY;
-
-        if ((knifeRect.left <= 0) || (knifeRect.left >= 800) || 
-            (knifeRect.top <= 0) || (knifeRect.top >= 600)) {
+        if (knifeRect.left <= 0 || knifeRect.left >= 800 ||
+            knifeRect.top <= 0 || knifeRect.top >= 600) {
             knifeActive = false;
         }
     }
 
-
-    // Throw knife every 3-5 seconds
+    // Throw knife
     knifeTimer--;
     if (knifeTimer <= 0) {
         throwKnife(playerX, playerY);
         knifeTimer = 180.f + rand() % 120;
     }
 
-    // Teleport to random position on screen every 2-4 seconds
-    if ((!isEncased()) && (!rolling)) {
-        teleportTimer--;
-        if (teleportTimer <= 0) {
-            rect.left = 50.f + rand() % 700;
-            rect.top = 50.f + rand() % 400;
-            teleportTimer = 120.f + rand() % 120;
-        }
+    // Teleport — sets position directly, skip gravity this frame
+    teleportTimer--;
+    if (teleportTimer <= 0) {
+        rect.left = 50.f + rand() % 700;
+        rect.top = 50.f + rand() % 400;
+        velocityY = 0.f; // reset velocity so it doesnt shoot down after teleport
+        teleportTimer = 120.f + rand() % 120;
+        return; // skip gravity this frame
     }
 
-    // Still use gravity and platform collision when on ground
+    // Normal gravity when not teleporting
+    isGrounded = false;
     velocityY += 0.6f;
     rect.top += velocityY;
 
-    for (int platformIndex = 0; platformIndex < platformCount; platformIndex++)
-        checkPlatformCollision(platforms[platformIndex]->getRect());
-    }
+    for (int i = 0; i < platformCount; i++)
+        checkPlatformCollision(platforms[i]->getRect());
 
+    // Screen bounds
+    if (rect.left < 0) rect.left = 0;
+    if (rect.left + rect.width > 800) rect.left = 800 - rect.width;
+    if (rect.top + rect.height >= 560) {
+        rect.top = 560 - rect.height;
+        velocityY = 0.f;
+        isGrounded = true;
+    }
+}
 
 void Tornado::Draw(sf::RenderWindow& window, bool showHitbox) {
     if (dead) 
         return;
-
-    float drawX = rect.left;
-    if (isEncased() && defrostTimer < 60.f && (int)defrostTimer % 6 < 3)
-        drawX += 3.f;
-
 
     // Draw knife
     if (knifeActive) {
@@ -120,17 +128,8 @@ void Tornado::Draw(sf::RenderWindow& window, bool showHitbox) {
         window.draw(knife);
     }
 
-    sf::RectangleShape shape(sf::Vector2f(rect.width, rect.height));
-    shape.setPosition(rect.left, rect.top);
-
-    if (rolling)
-        shape.setFillColor(sf::Color(200, 200, 255));
-    else if (isEncased())
-        shape.setFillColor(sf::Color::White);
-    else
-        shape.setFillColor(sf::Color(128, 0, 128)); // purple
-
-    window.draw(shape);
+    tSprite.setPosition(rect.left, rect.top);
+    window.draw(tSprite);
 
     if (showHitbox) {
         sf::RectangleShape hitbox(sf::Vector2f(rect.width, rect.height));

@@ -1,5 +1,6 @@
 #include "Smash.h"
 #include "Mogera.h"
+#include "Gamakichi.h"
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
@@ -20,11 +21,6 @@ void Smash::clearGems() {
 
 Smash::Smash(int playerNumber) {
     playerNum = playerNumber;
-
-    speedBoostTimer = 0.f;
-    balloonTimer = 0.f;
-    distanceBoostActive = false;
-    powerSnowActive = false;
 
     // Player 1 starts left, Player 2 starts right
     if (playerNum == 1) {
@@ -50,6 +46,11 @@ Smash::Smash(int playerNumber) {
     gemCurrency = 0;
     invincibleTimer = 0.f;
     shootHeld = false;
+    speedBoostTimer = 0.f;
+    balloonTimer = 0.f;
+    snowballPower = false;
+    distanceIncrease = false;
+    balloonMode = false;
 
     // Player 2 uses a different image
     std::string imageName = (playerNum == 1) ? "Image.png" : "Image2.png";
@@ -65,10 +66,22 @@ Smash::Smash(int playerNumber) {
     );
 }
 
+void Smash::addPowerUp(PowerUp* p) {
+    if (powerupCount >= 50) return;
+    powerups[powerupCount++] = p;
+}
+
 void Smash::throwSnowball() {
     if (snowballCount >= 100000) return;
     float spawnX = facingRight ? rect.left + rect.width : rect.left - 20;
-    snowballs[snowballCount++] = new Snowball(spawnX, rect.top + rect.height / 2, facingRight);
+    Snowball* s = new Snowball(spawnX, rect.top + rect.height / 2, facingRight);
+
+    // Distance increase — max range
+    if (distanceIncrease)
+        s->setMaxDistance(800.f);
+
+    snowballs[snowballCount++] = s;
+    SoundManager::get().playSnowball();
 }
 
 void Smash::checkPlatformCollision(sf::FloatRect platform) {
@@ -89,6 +102,9 @@ void Smash::checkEnemyCollision(Enemy** enemies, int enemyCount) {
     for (int i = 0; i < enemyCount; i++) {
         if (enemies[i]->isDead()) continue;
         if (enemies[i]->isEncased()) continue;
+
+        // Balloon mode — immune to ground enemies
+        if (balloonMode && !enemies[i]->isRolling()) continue;
 
         sf::FloatRect enemyRect = enemies[i]->getRect();
         bool overlapX = rect.left < enemyRect.left + enemyRect.width &&
@@ -129,31 +145,34 @@ void Smash::checkSnowballEnemyCollision(Enemy** enemies, int enemyCount) {
 
             if (enemies[e]->isRolling()) continue;
 
-            if (powerSnowActive)
-            {
-                enemies[e]->hitWithSnow();
-                enemies[e]->hitWithSnow();  // second hit instantly encases
+            enemies[e]->hitWithSnow();
+            // If snowball power active, hit twice instantly
+            if (snowballPower) enemies[e]->hitWithSnow();
+            if (enemies[e]->isEncased()) {
+                score += 100;
+                SoundManager::get().playEnemyHit();
             }
-            else
-                enemies[e]->hitWithSnow();
-
-
-            if (enemies[e]->isEncased()) score += 100;
             snowballs[s]->deactivate();
         }
     }
 }
 
 void Smash::Update(Platform** platforms, int platformCount, Enemy** enemies, int enemyCount) {
-    float speed = (speedBoostTimer > 0) ? 7.5f : 5.0f;  // 50% faster during boost
+    // Tick timers
+    if (speedBoostTimer > 0) speedBoostTimer--;
+    if (balloonTimer > 0) {
+        balloonTimer--;
+        balloonMode = (balloonTimer > 0);
+    }
+
+    // Apply speed boost
+    float speed = (speedBoostTimer > 0) ? 7.5f : 5.0f;
     float gravity = 0.6f;
     float jumpForce = -14.f;
 
-    if (speedBoostTimer > 0) speedBoostTimer--;
-    if (balloonTimer > 0)
-    {
-        balloonTimer--;
-        velocityY = -1.5f;  // gentle upward float
+    // Balloon mode - float upward slowly, can't be hurt by ground enemies
+    if (balloonMode) {
+        velocityY = -1.5f; // slow float up
     }
 
     if (invincibleTimer > 0) invincibleTimer--;
@@ -201,6 +220,35 @@ void Smash::Update(Platform** platforms, int platformCount, Enemy** enemies, int
         }
     }
 
+    // Update and check powerup collection
+    for (int i = 0; i < powerupCount; i++) {
+        if (!powerups[i]->isActive()) continue;
+        powerups[i]->Update();
+
+        sf::FloatRect pRect = powerups[i]->getRect();
+        bool ox = rect.left < pRect.left + pRect.width && rect.left + rect.width > pRect.left;
+        bool oy = rect.top < pRect.top + pRect.height && rect.top + rect.height > pRect.top;
+
+        if (ox && oy) {
+            switch (powerups[i]->getType()) {
+                case SPEED_BOOST:
+                    speedBoostTimer = 900.f; // 15 seconds at 60fps
+                    break;
+                case SNOWBALL_POWER:
+                    snowballPower = true;
+                    break;
+                case DISTANCE_INCREASE:
+                    distanceIncrease = true;
+                    break;
+                case BALLOON_MODE:
+                    balloonTimer = 600.f; // 10 seconds
+                    balloonMode = true;
+                    break;
+            }
+            powerups[i]->collect();
+        }
+    }
+
     // Kick encased enemies
     for (int i = 0; i < enemyCount; i++) {
         if (!enemies[i]->isEncased() || enemies[i]->isRolling() || enemies[i]->isDead()) continue;
@@ -245,6 +293,18 @@ void Smash::Update(Platform** platforms, int platformCount, Enemy** enemies, int
                 else {
                     if (sharedGemCount < 1000)
                         sharedGems[sharedGemCount++] = new Gem(r2.left + r2.width / 2, r2.top, 3);
+
+                    // 70% chance to drop a powerup (for testing)
+                    if (!enemies[j]->droppedPowerup && rand() % 10 < 7) {
+                        PowerUpType types[4] = { SPEED_BOOST, SNOWBALL_POWER, DISTANCE_INCREASE, BALLOON_MODE };
+                        PowerUpType randomType = types[rand() % 4];
+                        addPowerUp(new PowerUp(
+                            enemies[j]->getRect().left,
+                            enemies[j]->getRect().top,
+                            randomType
+                        ));
+                        enemies[j]->droppedPowerup = true;
+                    }
                 }
                 enemies[j]->kill();
                 score += 100 + rand() % 400;
@@ -299,6 +359,29 @@ void Smash::Update(Platform** platforms, int platformCount, Enemy** enemies, int
                     }
                 }
             }
+
+            Gamakichi* gama = dynamic_cast<Gamakichi*>(enemies[i]);
+            if (gama) {
+                for (int g = 0; g < 25; g++) {
+                    if (sharedGemCount < 1000) {
+                        float offsetX = gama->getRect().left + (rand() % (int)gama->getRect().width);
+                        float offsetY = gama->getRect().top + (rand() % (int)gama->getRect().height);
+                        Gem* newGem = new Gem(offsetX, offsetY, 500);
+
+                        // Random velocity in all directions with upward bias
+                        float angle = (rand() % 360) * 3.14159f / 180.f;
+                        float speed = 4.f + (rand() % 4); // 4-8 speed
+                        float vx = cosf(angle) * speed;
+                        float vy = sinf(angle) * speed; // positive = upward initially
+                        // Make sure they go up initially
+                        if (vy > 0) vy = -vy; // force upward
+                        newGem->setVelocity(vx, vy);
+
+                        sharedGems[sharedGemCount++] = newGem;
+                    }
+                }
+            }
+
             score += 200;
             enemies[i]->scoreCounted = true;
         }
@@ -320,6 +403,20 @@ void Smash::Draw(sf::RenderWindow& window, bool showHitbox) {
             sharedGems[i]->Draw(window);
     }
 
+    // Draw powerups
+    for (int i = 0; i < powerupCount; i++) {
+        if (powerups[i]->isActive())
+            powerups[i]->Draw(window);
+    }
+
+    // Active powerup indicator
+    if (speedBoostTimer > 0 || balloonMode || snowballPower || distanceIncrease) {
+        sf::RectangleShape indicator(sf::Vector2f(10, 10));
+        indicator.setPosition(rect.left, rect.top - 15);
+        indicator.setFillColor(sf::Color(255, 215, 0));
+        window.draw(indicator);
+    }
+
     if (showHitbox) {
         sf::RectangleShape hitbox(sf::Vector2f(rect.width, rect.height));
         hitbox.setPosition(rect.left, rect.top);
@@ -331,19 +428,54 @@ void Smash::Draw(sf::RenderWindow& window, bool showHitbox) {
 }
 
 void Smash::reset() {
-    if (playerNum == 1) {
-        rect.left = 200;
-    }
-    else {
-        rect.left = 540;
-    }
+    rect.left = (playerNum == 1) ? 200 : 540;
     rect.top = 470;
     velocityY = 0.f;
     isGrounded = false;
+    snowballPower = false;
+    distanceIncrease = false;
+    balloonMode = false;
+    balloonTimer = 0.f;
+    // Speed boost intentionally not reset - persists until level end
+    speedBoostTimer = 0.f;
+
+    // Clear powerups
+    for (int i = 0; i < powerupCount; i++) {
+        delete powerups[i];
+        powerups[i] = nullptr;
+    }
+    powerupCount = 0;
 }
 
 void Smash::hit() {
     if (invincibleTimer > 0) return;
     lives--;
     invincibleTimer = 120.f;
+    SoundManager::get().playPlayerHit();
+}
+
+void Smash::spendGems(int amount) {
+    gemCurrency -= amount;
+    if (gemCurrency < 0) gemCurrency = 0;
+}
+
+void Smash::activateSpeedBoost(float duration) {
+    speedBoostTimer = duration * 60.f;
+}
+
+void Smash::activateDistanceBoost() {
+    distanceIncrease = true;
+}
+
+void Smash::activatePowerSnow() {
+    snowballPower = true;
+}
+
+void Smash::activateBalloonMode(float duration) {
+    balloonTimer = duration * 60.f;
+    balloonMode = true;
+}
+
+void Smash::addLife() {
+    lives++;
 }

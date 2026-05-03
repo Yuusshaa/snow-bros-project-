@@ -2,6 +2,8 @@
 #include "Enemy.h"
 #include "Platform.h"
 #include "MogeraChild.h"
+#include "SoundManager.h"
+#include "Animation.h"
 #include <cmath>
 
 class Mogera : public Enemy {
@@ -23,8 +25,18 @@ public:
         health--;
     }
 
+    static bool loadTexture();
 
 private:
+    static sf::Texture mTexture;
+    static sf::Texture playerTexture;
+    sf::Sprite bodySprite;
+    sf::Sprite legsSprite;
+
+    Animation rollAnim;
+    Animation hitAnim;
+    Animation* currentAnim;
+
     float velocityY;
     bool isGrounded;
     bool droppingThrough;

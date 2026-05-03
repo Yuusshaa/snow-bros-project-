@@ -1,5 +1,6 @@
 #pragma once
 #include "Flyingshit.h"
+#include "Animation.h"
 
 class Tornado : public FlyingFoogaFoog {
 public:
@@ -9,7 +10,12 @@ public:
     sf::FloatRect getKnifeRect() { return knifeRect; }
     bool knifeActive = false;
 
+    static bool loadTexture();
+
 private:
+    static sf::Texture tTexture;
+    sf::Sprite tSprite;
+
     sf::FloatRect knifeRect;
     float knifeSpeedX;
     float knifeSpeedY;

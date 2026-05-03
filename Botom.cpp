@@ -3,18 +3,29 @@
 #include "animation.h"
 
 // static texture definition
-sf::Texture Botom::texture;  // only this, outside any function
+sf::Texture Botom::texture; 
+sf::Texture Botom::snowballtexture;
+
 bool Botom::loadTexture() {
-    return texture.loadFromFile("botom.png");
+    bool a = texture.loadFromFile("botom.png");
+    bool b = snowballtexture.loadFromFile("Player_Blue.png");
+
+    return a && b;
 }
+
 
 Botom::Botom(float x, float y)
 
 
-    : walkAnim(texture, 0, 368,95 , 82, 3, 8.f),   // row 1 — walk
-    idleAnim(texture, 9, 136, 83, 86, 1, 0.f),  // row 2 — frozen
-    halfAnim(texture, 0, 120, 50, 60, 2, 10.f),  // row 3 — half frozen
-    rollAnim(texture, 0, 180, 50, 60, 4, 4.f)    // row 4 — rolling
+    : walkAnim(texture, 0, 368, 95, 82, 3, 8.f),
+      fullAnim(snowballtexture, 5, 968, 81, 84, 1, 0.f),
+      idleAnim(texture, 9, 136, 83, 86, 1, 0.f),
+    //Position: 92,900 Size: 68x60
+      halfAnim(snowballtexture, 91, 900, 68, 60, 1, 0.f), 
+    // 5,969 Size: 328x82
+      rollAnim(snowballtexture, 5, 968, 81, 84, 3, 10.f),
+      jumpingAnim(texture, 0, 480, 100, 92, 1, 0.f),
+      currentAnim(&idleAnim)// row 4 — rolling
 {
     rect = sf::FloatRect(x, y, 50, 50);
     velocityY = 0.f;
@@ -44,9 +55,10 @@ void Botom::Update(Platform** platforms, int platformCount) {
     // --- pick animation based on state ---
 
     if (rolling)          currentAnim = &rollAnim;
-    else if (isEncased()) currentAnim = &idleAnim;
+    else if (isEncased()) currentAnim = &fullAnim;
     else if (isHalfFrozen()) currentAnim = &halfAnim;
     else if (direction == 0) currentAnim = &idleAnim;
+    else if (!isGrounded) currentAnim = &jumpingAnim;
     else                  currentAnim = &walkAnim;
 
     currentAnim->update();
@@ -135,7 +147,6 @@ void Botom::Update(Platform** platforms, int platformCount) {
 void Botom::Draw(sf::RenderWindow& window, bool showHitbox) {
     if (dead) return;
 
-    // shake effect when about to defrost
     float drawX = rect.left;
     if (isEncased() && defrostTimer < 60.f && (int)defrostTimer % 6 < 3)
         drawX += 3.f;
@@ -143,7 +154,6 @@ void Botom::Draw(sf::RenderWindow& window, bool showHitbox) {
         drawX += 3.f;
 
     currentAnim->draw(window, drawX, rect.top, rect.width, rect.height);
-
 
     if (showHitbox) {
         sf::RectangleShape hitbox(sf::Vector2f(rect.width, rect.height));
