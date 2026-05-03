@@ -17,6 +17,7 @@ sf::RectangleShape balloonmode;
 sf::RectangleShape nayizindagi;   
 sf::Texture backgroundTexture;   
 sf::Sprite backgroundSprite;
+sf::RectangleShape backButton;
 
 
 public:   

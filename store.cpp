@@ -16,40 +16,38 @@ Store::Store(sf::RenderWindow& window) : window(window)
         600.f / backgroundTexture.getSize().y
     );
 
-    // --- box positions (adjust these if they're off) ---
-    usainboltmode.setSize(sf::Vector2f(165, 115));
-    usainboltmode.setPosition(60, 115);
+    usainboltmode.setSize(sf::Vector2f(145, 135));
+    usainboltmode.setPosition(50, 135);
 
-    abominablesnowball.setSize(sf::Vector2f(165, 115));
-    abominablesnowball.setPosition(375, 115);
+    abominablesnowball.setSize(sf::Vector2f(145, 135));
+    abominablesnowball.setPosition(450, 130);
 
-    powersnow.setSize(sf::Vector2f(165, 95));
-    powersnow.setPosition(60, 270);
+    powersnow.setSize(sf::Vector2f(200, 55));
+    powersnow.setPosition(150, 320);
 
-    balloonmode.setSize(sf::Vector2f(165, 115));
-    balloonmode.setPosition(60, 395);
+    balloonmode.setSize(sf::Vector2f(145, 135));
+    balloonmode.setPosition(50, 420);
 
-    nayizindagi.setSize(sf::Vector2f(165, 115));
-    nayizindagi.setPosition(375, 395);
+    nayizindagi.setSize(sf::Vector2f(145, 135));
+    nayizindagi.setPosition(455, 420);
 
-    // all boxes transparent so background shows through
+
+
     usainboltmode.setFillColor(sf::Color::Transparent);
     abominablesnowball.setFillColor(sf::Color::Transparent);
     powersnow.setFillColor(sf::Color::Transparent);
     balloonmode.setFillColor(sf::Color::Transparent);
     nayizindagi.setFillColor(sf::Color::Transparent);
 
-    // outline so you can see them while testing — remove later
-    usainboltmode.setOutlineThickness(2);
-    usainboltmode.setOutlineColor(sf::Color::Yellow);
-    abominablesnowball.setOutlineThickness(2);
-    abominablesnowball.setOutlineColor(sf::Color::Yellow);
-    powersnow.setOutlineThickness(2);
-    powersnow.setOutlineColor(sf::Color::Yellow);
-    balloonmode.setOutlineThickness(2);
-    balloonmode.setOutlineColor(sf::Color::Yellow);
-    nayizindagi.setOutlineThickness(2);
-    nayizindagi.setOutlineColor(sf::Color::Yellow);
+
+
+
+    backButton.setSize(sf::Vector2f(150, 45));
+    backButton.setPosition(30, 45);
+    backButton.setFillColor(sf::Color::Transparent);
+    backButton.setOutlineThickness(2);
+    backButton.setOutlineColor(sf::Color::Transparent);
+
 }
 
 void Store::run(Smash& player)
@@ -77,6 +75,10 @@ void Store::run(Smash& player)
             if (event.type == sf::Event::MouseButtonPressed)
             {
                 sf::Vector2f mouse(event.mouseButton.x, event.mouseButton.y);
+
+                if (backButton.getGlobalBounds().contains(mouse))
+                    return;  // goes back to pause menu
+
 
                 // Usain Bolt Mode — Speed Boost 30s — 20 gems
                 if (usainboltmode.getGlobalBounds().contains(mouse))
@@ -155,6 +157,7 @@ void Store::run(Smash& player)
         window.draw(balloonmode);
         window.draw(nayizindagi);
         window.draw(statusText);
+        window.draw(backButton);
         window.display();
     }
 }
